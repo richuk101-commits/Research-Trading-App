@@ -1,13 +1,9 @@
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from app.analyzer import analyze_stock
 
 app = FastAPI(title="Trading Research App")
-
-# Mount static files for any custom CSS/JS (if needed)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Set up templates
 templates = Jinja2Templates(directory="app/templates")
