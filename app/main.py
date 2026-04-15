@@ -23,21 +23,33 @@ _BROWSER_HEADERS = {
 _NEWS_TTL = 600  # seconds
 _news_cache: dict = {"items": [], "fetched_at": 0.0}
 
-# Tickers whose Yahoo Finance news feeds cover broad market/financial topics
-_NEWS_TICKERS = ["SPY", "QQQ"]
+_YF_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search"
+_NEWS_QUERIES = ["stock market", "earnings", "Federal Reserve"]
 
 
-def _fetch_news_from_yf() -> list:
-    """Pull news from Yahoo Finance via yfinance, dedupe by title, sort newest first."""
+def _fetch_news_direct() -> list:
+    """Fetch market news directly from Yahoo Finance search API.
+    Uses multiple query terms to get ~10-12 diverse, recent items."""
     session = _make_session()
+    now = time.time()
     seen: set = set()
     raw_items: list = []
-    now = time.time()
 
-    for sym in _NEWS_TICKERS:
+    for query in _NEWS_QUERIES:
         try:
-            news = yf.Ticker(sym, session=session).news or []
-            for n in news:
+            resp = session.get(
+                _YF_SEARCH_URL,
+                params={
+                    "q": query,
+                    "newsCount": 6,
+                    "quotesCount": 0,
+                    "region": "US",
+                    "lang": "en-US",
+                },
+                timeout=6,
+            )
+            resp.raise_for_status()
+            for n in resp.json().get("news", []):
                 title = (n.get("title") or "").strip()
                 if not title or title in seen:
                     continue
@@ -58,14 +70,14 @@ def _fetch_news_from_yf() -> list:
                     "link": n.get("link") or "#",
                     "source": n.get("publisher") or "Yahoo Finance",
                     "age": age,
-                    "ts": ts,
+                    "_ts": ts,
                 })
         except Exception:
             pass
 
-    raw_items.sort(key=lambda x: x["ts"], reverse=True)
+    raw_items.sort(key=lambda x: x["_ts"], reverse=True)
     for item in raw_items:
-        item.pop("ts")
+        item.pop("_ts")
     return raw_items[:12]
 
 
@@ -109,7 +121,7 @@ async def api_news():
     if age_secs < _NEWS_TTL and _news_cache["items"]:
         return {"items": _news_cache["items"], "age_secs": age_secs}
 
-    items = _fetch_news_from_yf()
+    items = _fetch_news_direct()
     _news_cache["items"] = items
     _news_cache["fetched_at"] = now
     return {"items": items, "age_secs": 0}
