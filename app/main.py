@@ -2,9 +2,10 @@ import time
 import requests
 import yfinance as yf
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.analyzer import analyze_stock, _make_session
+from app.scanner import batch_scan, TOTAL_BATCHES, UNIVERSE
 
 app = FastAPI(title="Trading Research App")
 templates = Jinja2Templates(directory="app/templates")
@@ -125,6 +126,23 @@ async def api_news():
     _news_cache["items"] = items
     _news_cache["fetched_at"] = now
     return {"items": items, "age_secs": 0}
+
+
+@app.get("/scanner", response_class=HTMLResponse)
+async def scanner_page(request: Request):
+    return templates.TemplateResponse(request=request, name="scanner.html", context={
+        "request": request,
+        "total_batches": TOTAL_BATCHES,
+        "total_stocks": len(UNIVERSE),
+    })
+
+
+@app.get("/api/scan/batch")
+async def api_scan_batch(n: int = 0):
+    if n < 0 or n >= TOTAL_BATCHES:
+        return JSONResponse({"error": "invalid batch index"}, status_code=400)
+    results = batch_scan(n)
+    return {"batch": n, "results": results, "total_batches": TOTAL_BATCHES}
 
 
 @app.get("/api/search")
