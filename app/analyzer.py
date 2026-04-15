@@ -165,26 +165,38 @@ def _fetch_yahoo_info_direct(ticker_symbol: str) -> dict:
     return merged
 
 
+class TickerNotFoundError(Exception):
+    pass
+
+
 def _get_stock_info_fast(ticker_symbol: str) -> dict:
     return _fetch_yahoo_info_direct(ticker_symbol)
 
 
 def _get_stock_info(ticker_symbol: str) -> dict:
-    direct_error = None
     try:
         info = _get_stock_info_fast(ticker_symbol)
         if info:
             return info
-    except Exception as e:
-        direct_error = e
+    except requests.exceptions.HTTPError as e:
+        # 404 means the ticker simply doesn't exist — don't bother yfinance
+        if e.response is not None and e.response.status_code == 404:
+            raise TickerNotFoundError(f"Ticker '{ticker_symbol}' not found on Yahoo Finance. Check the symbol and try again.") from e
+        # For other HTTP errors fall through to yfinance
+    except Exception:
+        pass
 
     try:
         ticker = yf.Ticker(ticker_symbol, session=_make_session())
-        return ticker.info
-    except Exception as e:
-        if direct_error:
-            raise RuntimeError(f"direct Yahoo fetch failed: {direct_error}; yfinance fallback failed: {e}")
+        info = ticker.info
+        # yfinance returns {"trailingPegRatio": None} for unknown tickers
+        if not info or not (info.get("shortName") or info.get("longName") or info.get("regularMarketPrice")):
+            raise TickerNotFoundError(f"Ticker '{ticker_symbol}' not found. Check the symbol and try again.")
+        return info
+    except TickerNotFoundError:
         raise
+    except Exception as e:
+        raise RuntimeError(f"Data temporarily unavailable for {ticker_symbol}. Please try again in a moment.") from e
 
 
 def get_safe(info: dict, keys: list, default=None):
@@ -505,10 +517,16 @@ def analyze_stock(ticker_symbol: str) -> Dict[str, Any]:
             _cache_set(ticker_symbol, result)
             save_cached_analysis(ticker_symbol, result)
             return result
-    except Exception as _fetch_err:
-        _last_error = str(_fetch_err)
-    else:
-        _last_error = "Yahoo Finance returned no usable data"
+        # Got a response but no usable fields — treat as not found
+        raise TickerNotFoundError(f"'{ticker_symbol}' returned no data. Check the symbol and try again.")
+    except TickerNotFoundError as e:
+        return {
+            "error": str(e),
+            "unsupported_ticker": True,
+            "is_rate_limited": False,
+        }
+    except Exception:
+        pass
 
     # 4. Scan snapshot fallback (seeded or saved)
     scan_fallback = _build_scan_fallback(ticker_symbol)
@@ -518,7 +536,7 @@ def analyze_stock(ticker_symbol: str) -> Dict[str, Any]:
         return scan_fallback
 
     return {
-        "error": f"Could not fetch data for {ticker_symbol}: {_last_error}",
+        "error": f"Data temporarily unavailable for {ticker_symbol}. Please try again in a moment.",
         "unsupported_ticker": False,
         "is_rate_limited": True,
     }
