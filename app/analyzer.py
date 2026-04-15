@@ -129,9 +129,21 @@ def _get_crumb(session: requests.Session) -> str | None:
     return None
 
 
-def _fetch_yahoo_info_direct(ticker_symbol: str) -> dict:
-    session = _make_session()
-    crumb = _get_crumb(session)
+def _fetch_yahoo_info_direct(
+    ticker_symbol: str,
+    session: requests.Session | None = None,
+    crumb: str | None = None,
+) -> dict:
+    """Fetch Yahoo Finance data for one ticker.
+
+    Accepts an optional pre-built session and crumb so callers that process
+    multiple tickers can share them (saves 2 round-trips per ticker).
+    """
+    if session is None:
+        session = _make_session()
+    if crumb is None:
+        crumb = _get_crumb(session)
+
     merged: dict = {}
 
     summary_params: dict = {"modules": ",".join(_YF_MODULES), "formatted": "false"}
@@ -169,8 +181,12 @@ class TickerNotFoundError(Exception):
     pass
 
 
-def _get_stock_info_fast(ticker_symbol: str) -> dict:
-    return _fetch_yahoo_info_direct(ticker_symbol)
+def _get_stock_info_fast(
+    ticker_symbol: str,
+    session: requests.Session | None = None,
+    crumb: str | None = None,
+) -> dict:
+    return _fetch_yahoo_info_direct(ticker_symbol, session=session, crumb=crumb)
 
 
 def _get_stock_info(ticker_symbol: str) -> dict:

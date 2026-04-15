@@ -7,7 +7,7 @@ batch are fetched in parallel to keep wall-clock time within Vercel's timeout.
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from app.analyzer import (
-    get_safe, _get_stock_info_fast,
+    get_safe, _get_stock_info_fast, _make_session, _get_crumb,
     _calc_buffett, _calc_lynch, _calc_graham, _calc_marks,
     _calc_dalio, _calc_burry, _calc_fisher, _calc_wood,
     _calc_greenblatt, _calc_druckenmiller,
@@ -36,10 +36,10 @@ BATCH_SIZE = 5
 TOTAL_BATCHES = (len(UNIVERSE) + BATCH_SIZE - 1) // BATCH_SIZE
 
 
-def _scan_one(sym: str) -> dict | None:
+def _scan_one(sym: str, session=None, crumb=None) -> dict | None:
     """Fetch and score a single ticker. Returns None on any failure."""
     try:
-        info = _get_stock_info_fast(sym)
+        info = _get_stock_info_fast(sym, session=session, crumb=crumb)
         if not info or not (info.get("shortName") or info.get("longName")):
             return None
 
@@ -106,15 +106,23 @@ def _scan_one(sym: str) -> dict | None:
 def batch_scan(batch_index: int) -> list:
     """
     Scan one batch of BATCH_SIZE tickers in parallel.
-    Returns a list of result dicts (one per ticker that succeeded).
+    One session and crumb are fetched once and shared across all tickers
+    in the batch — saves 2 round-trips per ticker.
     Skips tickers that fail or time out — never raises.
     """
     start = batch_index * BATCH_SIZE
     tickers = UNIVERSE[start: start + BATCH_SIZE]
 
+    # One session + crumb for the whole batch
+    session = _make_session()
+    crumb = _get_crumb(session)
+
     results = []
     with ThreadPoolExecutor(max_workers=BATCH_SIZE) as executor:
-        futures = {executor.submit(_scan_one, sym): sym for sym in tickers}
+        futures = {
+            executor.submit(_scan_one, sym, session, crumb): sym
+            for sym in tickers
+        }
         for future in as_completed(futures):
             result = future.result()
             if result is not None:
