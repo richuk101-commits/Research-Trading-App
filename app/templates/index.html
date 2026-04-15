@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investor Lens - Stock Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .stitch-card {
+            background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s;
+        }
+        .stitch-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); transform: translateY(-2px); }
+        .stitch-input { border: 1px solid #E2E8F0; border-radius: 9999px; transition: all 0.2s; }
+        .stitch-input:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        
+        #autocomplete-results {
+            display: none; position: absolute; top: 100%; left: 0; right: 0;
+            background: white; border: 1px solid #E2E8F0; border-radius: 1rem;
+            margin-top: 8px; z-index: 50; overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <nav class="w-full max-w-5xl mx-auto px-6 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span class="font-bold text-xl tracking-tight">Investor Lens</span>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-3xl mx-auto px-6 py-12 flex flex-col items-center">
+        
+        <div class="text-center mb-10 w-full">
+            <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 mb-4">See stocks through the eyes of legends.</h1>
+            <p class="text-lg text-slate-500 mb-8 max-w-xl mx-auto">Instant analysis across 8 famous methodologies including Buffett, Lynch, Wood, and Burry.</p>
+            
+            <form action="/analyze" method="post" class="w-full relative max-w-lg mx-auto" id="search-form">
+                <div class="relative flex items-center">
+                    <svg class="h-5 w-5 absolute left-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" name="ticker" id="ticker-input" placeholder="Search company or ticker (e.g. AAPL)" autocomplete="off"
+                           class="w-full stitch-input py-4 pl-14 pr-32 text-slate-900 bg-white placeholder-slate-400 text-lg">
+                    <button type="submit" class="absolute right-2 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full transition-colors">
+                        Analyze
+                    </button>
+                </div>
+                
+                <!-- Autocomplete Dropdown -->
+                <div id="autocomplete-results">
+                    <ul id="results-list" class="divide-y divide-slate-100"></ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="w-full mt-8">
+            <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Trending Scans</h3>
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 w-full">
+                {% for stock in trending %}
+                <a href="/analyze/{{ stock.ticker }}" class="stitch-card p-4 flex flex-col items-center justify-center text-center group">
+                    <span class="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{{ stock.ticker }}</span>
+                    <span class="text-xs text-slate-500 mt-1 truncate w-full">{{ stock.name }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+    </main>
+
+    <footer class="w-full py-6 text-center text-slate-400 text-sm">
+        <p>Data provided by Yahoo Finance.</p>
+    </footer>
+
+    <script>
+        const input = document.getElementById('ticker-input');
+        const resultsContainer = document.getElementById('autocomplete-results');
+        const resultsList = document.getElementById('results-list');
+        let timeout = null;
+
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            timeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    resultsList.innerHTML = '';
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(item => {
+                            const li = document.createElement('li');
+                            li.className = 'px-4 py-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center text-left';
+                            li.innerHTML = `
+                                <div>
+                                    <span class="font-bold text-slate-800">${item.symbol}</span>
+                                    <span class="text-sm text-slate-500 ml-2 block sm:inline">${item.name}</span>
+                                </div>
+                                <span class="text-xs text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded">${item.exchange}</span>
+                            `;
+                            li.addEventListener('click', () => {
+                                input.value = item.symbol;
+                                resultsContainer.style.display = 'none';
+                                document.getElementById('search-form').submit();
+                            });
+                            resultsList.appendChild(li);
+                        });
+                        resultsContainer.style.display = 'block';
+                    } else {
+                        resultsContainer.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error('Search error:', e);
+                }
+            }, 300); // debounce 300ms
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('search-form').contains(e.target)) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
