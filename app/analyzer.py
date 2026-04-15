@@ -1,6 +1,22 @@
 import yfinance as yf
 import math
+import requests
 from typing import Dict, Any, Tuple, List
+
+def _make_session() -> requests.Session:
+    """Return a requests Session that looks like a real browser.
+    Yahoo Finance blocks bare cloud-server requests without proper headers."""
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+    })
+    return session
 
 # Skill: stock-analyst-legends — exact weights
 MANAGER_WEIGHTS = {
@@ -80,7 +96,8 @@ def _compute_signal(consensus: float, scores_list: List[int]) -> Tuple[str, str,
 # ---------------------------------------------------------------------------
 
 def analyze_stock(ticker_symbol: str) -> Dict[str, Any]:
-    ticker = yf.Ticker(ticker_symbol)
+    session = _make_session()
+    ticker = yf.Ticker(ticker_symbol, session=session)
     try:
         info = ticker.info
     except Exception as e:

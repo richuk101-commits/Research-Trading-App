@@ -38,33 +38,37 @@ async def post_analyze(request: Request, ticker: str = Form(...)):
     })
 
 import requests
+import yfinance as yf
+from app.analyzer import _make_session
+
+_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    )
+}
 
 @app.get("/api/search")
 async def api_search(q: str):
-    # Use Yahoo Finance search API for autocomplete
     url = f"https://query2.finance.yahoo.com/v1/finance/search?q={q}"
-    headers = {'User-Agent': 'Mozilla/5.0'}
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=_BROWSER_HEADERS, timeout=5)
         data = response.json()
         quotes = data.get("quotes", [])
-        # Filter for equities and ETFs to keep it relevant
         results = [
             {"symbol": q["symbol"], "name": q.get("shortname", q["symbol"]), "exchange": q.get("exchDisp", "")}
             for q in quotes if q.get("quoteType") in ["EQUITY", "ETF"]
         ]
-        return {"results": results[:10]} # Return top 10
+        return {"results": results[:10]}
     except Exception as e:
         return {"results": [], "error": str(e)}
-
-import yfinance as yf
 
 @app.get("/api/chart/{ticker}")
 async def api_chart(ticker: str):
     ticker = ticker.upper()
     try:
-        # Cache this if possible in a real app, but fetching 1y is relatively fast
-        stock = yf.Ticker(ticker)
+        stock = yf.Ticker(ticker, session=_make_session())
         hist = stock.history(period="1y")
         if hist.empty:
             return {"dates": [], "prices": []}
