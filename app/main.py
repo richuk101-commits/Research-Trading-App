@@ -1,45 +1,13 @@
+import time
+import requests
+import yfinance as yf
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from app.analyzer import analyze_stock
+from app.analyzer import analyze_stock, _make_session
 
 app = FastAPI(title="Trading Research App")
-
-# Set up templates
 templates = Jinja2Templates(directory="app/templates")
-
-# Trending stocks to display on the homepage
-TRENDING_STOCKS = [
-    {"ticker": "NVDA", "name": "NVIDIA Corp"},
-    {"ticker": "TSLA", "name": "Tesla Inc"},
-    {"ticker": "AAPL", "name": "Apple Inc"},
-    {"ticker": "MSFT", "name": "Microsoft Corp"},
-]
-
-@app.get("/", response_class=HTMLResponse)
-async def read_home(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={
-        "request": request,
-        "trending": TRENDING_STOCKS
-    })
-
-@app.post("/analyze", response_class=HTMLResponse)
-async def post_analyze(request: Request, ticker: str = Form(...)):
-    # Clean up user input
-    ticker = ticker.strip().upper()
-    
-    # Run the analysis
-    analysis_result = analyze_stock(ticker)
-    
-    return templates.TemplateResponse(request=request, name="report.html", context={
-        "request": request,
-        "ticker": ticker,
-        "result": analysis_result
-    })
-
-import requests
-import yfinance as yf
-from app.analyzer import _make_session
 
 _BROWSER_HEADERS = {
     "User-Agent": (
@@ -48,6 +16,104 @@ _BROWSER_HEADERS = {
         "Chrome/124.0.0.0 Safari/537.36"
     )
 }
+
+# ---------------------------------------------------------------------------
+# News cache — refreshed at most once every 10 minutes
+# ---------------------------------------------------------------------------
+_NEWS_TTL = 600  # seconds
+_news_cache: dict = {"items": [], "fetched_at": 0.0}
+
+# Tickers whose Yahoo Finance news feeds cover broad market/financial topics
+_NEWS_TICKERS = ["SPY", "QQQ"]
+
+
+def _fetch_news_from_yf() -> list:
+    """Pull news from Yahoo Finance via yfinance, dedupe by title, sort newest first."""
+    session = _make_session()
+    seen: set = set()
+    raw_items: list = []
+    now = time.time()
+
+    for sym in _NEWS_TICKERS:
+        try:
+            news = yf.Ticker(sym, session=session).news or []
+            for n in news:
+                title = (n.get("title") or "").strip()
+                if not title or title in seen:
+                    continue
+                seen.add(title)
+                ts = n.get("providerPublishTime") or 0
+                diff = int(now - ts) if ts else None
+                if diff is not None:
+                    if diff < 3600:
+                        age = f"{max(diff // 60, 1)}m ago"
+                    elif diff < 86400:
+                        age = f"{diff // 3600}h ago"
+                    else:
+                        age = f"{diff // 86400}d ago"
+                else:
+                    age = ""
+                raw_items.append({
+                    "title": title,
+                    "link": n.get("link") or "#",
+                    "source": n.get("publisher") or "Yahoo Finance",
+                    "age": age,
+                    "ts": ts,
+                })
+        except Exception:
+            pass
+
+    raw_items.sort(key=lambda x: x["ts"], reverse=True)
+    for item in raw_items:
+        item.pop("ts")
+    return raw_items[:12]
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+@app.get("/", response_class=HTMLResponse)
+async def read_home(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html", context={
+        "request": request,
+    })
+
+
+@app.post("/analyze", response_class=HTMLResponse)
+async def post_analyze(request: Request, ticker: str = Form(...)):
+    ticker = ticker.strip().upper()
+    analysis_result = analyze_stock(ticker)
+    return templates.TemplateResponse(request=request, name="report.html", context={
+        "request": request,
+        "ticker": ticker,
+        "result": analysis_result,
+    })
+
+
+@app.get("/analyze/{ticker}", response_class=HTMLResponse)
+async def get_analyze(request: Request, ticker: str):
+    ticker = ticker.strip().upper()
+    analysis_result = analyze_stock(ticker)
+    return templates.TemplateResponse(request=request, name="report.html", context={
+        "request": request,
+        "ticker": ticker,
+        "result": analysis_result,
+    })
+
+
+@app.get("/api/news")
+async def api_news():
+    now = time.time()
+    age_secs = int(now - _news_cache["fetched_at"])
+    if age_secs < _NEWS_TTL and _news_cache["items"]:
+        return {"items": _news_cache["items"], "age_secs": age_secs}
+
+    items = _fetch_news_from_yf()
+    _news_cache["items"] = items
+    _news_cache["fetched_at"] = now
+    return {"items": items, "age_secs": 0}
+
 
 @app.get("/api/search")
 async def api_search(q: str):
@@ -64,6 +130,7 @@ async def api_search(q: str):
     except Exception as e:
         return {"results": [], "error": str(e)}
 
+
 @app.get("/api/chart/{ticker}")
 async def api_chart(ticker: str):
     ticker = ticker.upper()
@@ -72,26 +139,9 @@ async def api_chart(ticker: str):
         hist = stock.history(period="1y")
         if hist.empty:
             return {"dates": [], "prices": []}
-        
-        # Reset index to easily extract dates as strings
         hist = hist.reset_index()
-        dates = hist['Date'].dt.strftime('%Y-%m-%d').tolist()
-        prices = hist['Close'].round(2).tolist()
-        
+        dates = hist["Date"].dt.strftime("%Y-%m-%d").tolist()
+        prices = hist["Close"].round(2).tolist()
         return {"dates": dates, "prices": prices}
     except Exception as e:
         return {"error": str(e)}
-
-@app.get("/analyze/{ticker}", response_class=HTMLResponse)
-async def get_analyze(request: Request, ticker: str):
-    # This enables clicking on links to trigger analysis (e.g. from trending section)
-    ticker = ticker.strip().upper()
-    
-    # Run the analysis
-    analysis_result = analyze_stock(ticker)
-    
-    return templates.TemplateResponse(request=request, name="report.html", context={
-        "request": request,
-        "ticker": ticker,
-        "result": analysis_result
-    })
