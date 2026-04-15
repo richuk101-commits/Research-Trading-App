@@ -1,11 +1,14 @@
 import yfinance as yf
 import math
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from typing import Dict, Any, Tuple, List
 
+
 def _make_session() -> requests.Session:
-    """Return a requests Session that looks like a real browser.
-    Yahoo Finance blocks bare cloud-server requests without proper headers."""
+    """Return a requests Session that looks like a real browser and retries on
+    rate-limit (429) or transient server errors (500/502/503/504)."""
     session = requests.Session()
     session.headers.update({
         "User-Agent": (
@@ -16,6 +19,16 @@ def _make_session() -> requests.Session:
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
     })
+    retry = Retry(
+        total=4,
+        backoff_factor=0.4,          # waits 0s, 0.4s, 0.8s, 1.6s between attempts
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
     return session
 
 # Skill: stock-analyst-legends — exact weights
