@@ -113,13 +113,34 @@ def _normalize_yahoo_dict(data: dict | None) -> dict:
     return normalized
 
 
+def _get_crumb(session: requests.Session) -> str | None:
+    """Fetch the Yahoo Finance crumb required for authenticated API calls."""
+    try:
+        # Seed cookies via the consent/FC page
+        session.get("https://fc.yahoo.com", timeout=5)
+        resp = session.get(
+            "https://query1.finance.yahoo.com/v1/test/getcrumb",
+            timeout=5,
+        )
+        if resp.status_code == 200 and resp.text and resp.text != "":
+            return resp.text.strip()
+    except Exception:
+        pass
+    return None
+
+
 def _fetch_yahoo_info_direct(ticker_symbol: str) -> dict:
     session = _make_session()
+    crumb = _get_crumb(session)
     merged: dict = {}
+
+    summary_params: dict = {"modules": ",".join(_YF_MODULES), "formatted": "false"}
+    if crumb:
+        summary_params["crumb"] = crumb
 
     summary_resp = session.get(
         _YF_QUOTE_SUMMARY_URL.format(ticker=ticker_symbol),
-        params={"modules": ",".join(_YF_MODULES)},
+        params=summary_params,
         timeout=8,
     )
     summary_resp.raise_for_status()
@@ -128,9 +149,13 @@ def _fetch_yahoo_info_direct(ticker_symbol: str) -> dict:
     for section in result.values():
         merged.update(_normalize_yahoo_dict(section if isinstance(section, dict) else {}))
 
+    quote_params: dict = {"symbols": ticker_symbol}
+    if crumb:
+        quote_params["crumb"] = crumb
+
     quote_resp = session.get(
         _YF_QUOTE_URL,
-        params={"symbols": ticker_symbol},
+        params=quote_params,
         timeout=6,
     )
     quote_resp.raise_for_status()
@@ -480,8 +505,10 @@ def analyze_stock(ticker_symbol: str) -> Dict[str, Any]:
             _cache_set(ticker_symbol, result)
             save_cached_analysis(ticker_symbol, result)
             return result
-    except Exception:
-        pass
+    except Exception as _fetch_err:
+        _last_error = str(_fetch_err)
+    else:
+        _last_error = "Yahoo Finance returned no usable data"
 
     # 4. Scan snapshot fallback (seeded or saved)
     scan_fallback = _build_scan_fallback(ticker_symbol)
@@ -491,7 +518,7 @@ def analyze_stock(ticker_symbol: str) -> Dict[str, Any]:
         return scan_fallback
 
     return {
-        "error": f"Could not fetch data for {ticker_symbol}. Yahoo Finance may be rate-limiting — please try again in a moment.",
+        "error": f"Could not fetch data for {ticker_symbol}: {_last_error}",
         "unsupported_ticker": False,
         "is_rate_limited": True,
     }
