@@ -15,22 +15,34 @@ from app.analyzer import (
 )
 
 UNIVERSE = [
-    # Mega-cap Tech
+    # Mega-cap Tech (29)
     "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "AMD",
-    "ADBE", "CRM", "ORCL", "INTC", "QCOM", "AVGO", "TXN",
-    # Financials
+    "ADBE", "CRM", "ORCL", "INTC", "QCOM", "AVGO", "TXN", "MU",
+    "AMAT", "LRCX", "NOW", "SNPS", "CDNS", "PLTR", "SNOW",
+    "CRWD", "PANW", "FTNT", "NET", "DDOG", "ZS",
+    # Financials (22)
     "JPM", "V", "MA", "BAC", "GS", "MS", "WFC", "AXP", "BLK", "SCHW",
-    # Healthcare
+    "C", "COF", "USB", "PNC", "SPGI", "MCO", "ICE", "CME", "BX", "KKR", "PYPL", "FI",
+    # Healthcare (19)
     "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "TMO", "ABT", "AMGN",
-    # Consumer Staples / Discretionary
-    "WMT", "COST", "PG", "KO", "PEP", "MCD", "HD", "NKE", "SBUX", "TGT",
-    # Energy
-    "XOM", "CVX",
-    # Industrials
-    "CAT", "HON", "RTX", "DE", "BA",
-    # Communication / Other
-    "NFLX", "DIS", "UBER", "PYPL", "T",
-]
+    "GILD", "REGN", "VRTX", "BMY", "CVS", "CI", "ELV", "ISRG", "MDT", "DHR",
+    # Consumer Staples (10)
+    "WMT", "COST", "PG", "KO", "PEP", "MDLZ", "CL", "MKC", "GIS", "CHD",
+    # Consumer Discretionary (13)
+    "MCD", "HD", "NKE", "SBUX", "TGT", "LOW", "TJX", "ROST", "ABNB", "BKNG", "CMG", "HLT", "MAR",
+    # Energy (10)
+    "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "VLO", "OXY", "PSX", "DVN",
+    # Industrials (15)
+    "CAT", "HON", "RTX", "DE", "BA", "GE", "LMT", "NOC", "GD", "UNP", "UPS", "FDX", "CTAS", "ETN", "EMR",
+    # Communication & Media (5)
+    "NFLX", "DIS", "T", "VZ", "TMUS",
+    # Materials (6)
+    "LIN", "APD", "SHW", "ECL", "FCX", "NEM",
+    # REITs & Utilities (5)
+    "PLD", "AMT", "EQIX", "NEE", "DUK",
+    # Misc (3)
+    "UBER", "COIN", "SOFI",
+]  # 137 total
 
 BATCH_SIZE = 5
 TOTAL_BATCHES = (len(UNIVERSE) + BATCH_SIZE - 1) // BATCH_SIZE

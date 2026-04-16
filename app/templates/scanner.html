@@ -69,54 +69,70 @@
         <!-- Results -->
         <div id="results-section" class="hidden">
 
-            <!-- Passed filter -->
-            <div id="passed-container" class="mb-8">
-                <h2 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    Passed — 7+ Bullish Managers, Score ≥ 75
-                    <span id="passed-count" class="text-sm font-normal text-slate-400"></span>
-                </h2>
-                <div id="passed-empty" class="hidden stitch-card p-8 text-center text-slate-400 text-sm">
-                    No stocks passed the filter in this scan. The bar is intentionally high — try again tomorrow.
-                </div>
-                <div class="stitch-card overflow-hidden hidden" id="passed-table-wrap">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                <th class="px-4 py-3 text-left">Ticker</th>
-                                <th class="px-4 py-3 text-left">Company</th>
-                                <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
-                                <th class="px-4 py-3 text-center">Score</th>
-                                <th class="px-4 py-3 text-center">Signal</th>
-                                <th class="px-4 py-3 text-center">Managers</th>
-                            </tr>
-                        </thead>
-                        <tbody id="passed-tbody" class="divide-y divide-slate-50"></tbody>
-                    </table>
+            <!-- Passed filter (expanded by default) -->
+            <div class="mb-6">
+                <button onclick="toggleSection('passed')"
+                        class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
+                    <span class="flex items-center gap-2 font-bold text-slate-900">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        Passed — 7+ Bullish Managers, Score ≥ 75
+                        <span id="passed-count" class="text-sm font-normal text-slate-400"></span>
+                    </span>
+                    <svg id="passed-chevron" class="h-4 w-4 text-slate-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="passed-body" class="mt-2">
+                    <div id="passed-empty" class="hidden stitch-card p-8 text-center text-slate-400 text-sm">
+                        No stocks passed the filter in this scan. The bar is intentionally high — try again tomorrow.
+                    </div>
+                    <div class="stitch-card overflow-hidden hidden" id="passed-table-wrap">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <th class="px-4 py-3 text-left">Ticker</th>
+                                    <th class="px-4 py-3 text-left">Company</th>
+                                    <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
+                                    <th class="px-4 py-3 text-center">Score</th>
+                                    <th class="px-4 py-3 text-center">Signal</th>
+                                    <th class="px-4 py-3 text-center">Managers</th>
+                                </tr>
+                            </thead>
+                            <tbody id="passed-tbody" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- Full results -->
-            <div>
-                <h2 class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                    Full Universe
-                    <span id="all-count" class="text-sm font-normal text-slate-400"></span>
-                </h2>
-                <div class="stitch-card overflow-hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                <th class="px-4 py-3 text-left">Ticker</th>
-                                <th class="px-4 py-3 text-left">Company</th>
-                                <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
-                                <th class="px-4 py-3 text-center">Score</th>
-                                <th class="px-4 py-3 text-center">Signal</th>
-                                <th class="px-4 py-3 text-center">Managers</th>
-                            </tr>
-                        </thead>
-                        <tbody id="all-tbody" class="divide-y divide-slate-50"></tbody>
-                    </table>
+            <!-- Did Not Pass (collapsed by default) -->
+            <div class="mb-6">
+                <button onclick="toggleSection('failed')"
+                        class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
+                    <span class="flex items-center gap-2 font-bold text-slate-900">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                        Did Not Pass
+                        <span id="failed-count" class="text-sm font-normal text-slate-400"></span>
+                    </span>
+                    <svg id="failed-chevron" class="h-4 w-4 text-slate-400 transition-transform rotate-[-90deg]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div id="failed-body" class="mt-2 hidden">
+                    <div class="stitch-card overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <th class="px-4 py-3 text-left">Ticker</th>
+                                    <th class="px-4 py-3 text-left">Company</th>
+                                    <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
+                                    <th class="px-4 py-3 text-center">Score</th>
+                                    <th class="px-4 py-3 text-center">Signal</th>
+                                    <th class="px-4 py-3 text-center">Managers</th>
+                                </tr>
+                            </thead>
+                            <tbody id="failed-tbody" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -142,10 +158,10 @@
     </footer>
 
     <script>
-        const TOTAL_BATCHES = {{ total_batches }};
-        const CACHE_KEY     = 'investor_lens_scan';
-        const CACHE_TTL_MS  = 24 * 60 * 60 * 1000; // 24 hours
-        const BATCH_DELAY_MS = 500; // 0.5s between batches
+        const TOTAL_BATCHES  = {{ total_batches }};
+        const CACHE_KEY      = 'investor_lens_scan';
+        const CACHE_TTL_MS   = 24 * 60 * 60 * 1000; // 24 hours
+        const PARALLEL_FETCH = 4; // batches to fire at once
 
         let isScanning = false;
 
@@ -155,7 +171,6 @@
             if (cached) {
                 renderResults(cached.results, cached.scannedAt);
             }
-            // else: empty state is already visible
         });
 
         // ── Cache helpers ──────────────────────────────────────────────────
@@ -171,10 +186,7 @@
 
         function saveCache(results) {
             try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify({
-                    results,
-                    scannedAt: Date.now(),
-                }));
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ results, scannedAt: Date.now() }));
             } catch {}
         }
 
@@ -190,26 +202,37 @@
             document.getElementById('btn-scan').textContent = 'Scanning…';
 
             const allResults = [];
+            let batchesDone  = 0;
 
-            for (let n = 0; n < TOTAL_BATCHES; n++) {
-                setProgress(n, TOTAL_BATCHES);
+            // Fire batches in windows of PARALLEL_FETCH at a time
+            for (let start = 0; start < TOTAL_BATCHES; start += PARALLEL_FETCH) {
+                const end     = Math.min(start + PARALLEL_FETCH, TOTAL_BATCHES);
+                const indices = Array.from({ length: end - start }, (_, i) => start + i);
 
-                try {
-                    const resp = await fetch(`/api/scan/batch?n=${n}`);
-                    const data = await resp.json();
-                    if (data.results) allResults.push(...data.results);
-                } catch (e) {
-                    console.warn(`Batch ${n} failed:`, e);
-                }
+                setProgress(batchesDone, TOTAL_BATCHES, start, end);
 
-                // Pause between batches to avoid rate limiting (skip after last batch)
-                if (n < TOTAL_BATCHES - 1) {
-                    await sleep(BATCH_DELAY_MS);
-                }
+                const settled = await Promise.allSettled(
+                    indices.map(n =>
+                        fetch(`/api/scan/batch?n=${n}`)
+                            .then(r => r.json())
+                            .catch(() => null)
+                    )
+                );
+
+                settled.forEach(outcome => {
+                    if (outcome.status === 'fulfilled' && outcome.value?.results) {
+                        allResults.push(...outcome.value.results);
+                    }
+                });
+
+                batchesDone += indices.length;
+                setProgress(batchesDone, TOTAL_BATCHES);
+
+                // Brief pause between windows so Yahoo Finance doesn't rate-limit
+                if (end < TOTAL_BATCHES) await sleep(800);
             }
 
-            setProgress(TOTAL_BATCHES, TOTAL_BATCHES);
-            await sleep(400); // brief pause so user sees 100%
+            await sleep(300);
 
             saveCache(allResults);
             renderResults(allResults, Date.now());
@@ -220,31 +243,34 @@
             isScanning = false;
         }
 
-        function setProgress(batchDone, total) {
-            const pct = Math.round((batchDone / total) * 100);
+        function setProgress(done, total) {
+            const pct = Math.round((done / total) * 100);
             document.getElementById('progress-bar').style.width = pct + '%';
             document.getElementById('progress-pct').textContent  = pct + '%';
             document.getElementById('progress-label').textContent =
-                batchDone < total
-                    ? `Scanning batch ${batchDone + 1} of ${total}…`
-                    : 'Scan complete — building results…';
+                done < total ? `Scanning… (${done} of ${total} batches done)` : 'Building results…';
         }
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+        // ── Collapsible sections ───────────────────────────────────────────
+        function toggleSection(id) {
+            const body    = document.getElementById(id + '-body');
+            const chevron = document.getElementById(id + '-chevron');
+            const hidden  = body.classList.toggle('hidden');
+            chevron.style.transform = hidden ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
         // ── Render ─────────────────────────────────────────────────────────
         function renderResults(results, scannedAt) {
-            // Sort by consensus score descending
             results.sort((a, b) => b.consensus - a.consensus);
 
             const passed = results.filter(r => r.consensus >= 75 && r.bullish_count >= 7);
-            const all    = results;
+            const failed = results.filter(r => !(r.consensus >= 75 && r.bullish_count >= 7));
 
-            // Meta line
-            const age   = Math.round((Date.now() - scannedAt) / 60000);
-            const when  = age < 2 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
-            document.getElementById('scan-meta').textContent =
-                `${results.length} stocks scanned • ${when}`;
+            const age  = Math.round((Date.now() - scannedAt) / 60000);
+            const when = age < 2 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
+            document.getElementById('scan-meta').textContent = `${results.length} stocks scanned • ${when}`;
 
             // Passed section
             document.getElementById('passed-count').textContent = `(${passed.length})`;
@@ -257,9 +283,9 @@
                 document.getElementById('passed-tbody').innerHTML = passed.map(rowHtml).join('');
             }
 
-            // Full universe table
-            document.getElementById('all-count').textContent = `(${all.length} scanned)`;
-            document.getElementById('all-tbody').innerHTML = all.map(rowHtml).join('');
+            // Did Not Pass section
+            document.getElementById('failed-count').textContent = `(${failed.length})`;
+            document.getElementById('failed-tbody').innerHTML = failed.map(rowHtml).join('');
 
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('results-section').classList.remove('hidden');
@@ -267,7 +293,6 @@
 
         function rowHtml(r) {
             const signalBg = signalColour(r.signal_label);
-            const barPct   = r.consensus;
             const barColor = r.consensus >= 75 ? 'bg-emerald-500'
                            : r.consensus >= 50 ? 'bg-yellow-400'
                            : 'bg-red-400';
@@ -275,11 +300,11 @@
             <tr class="result-row" onclick="window.location='/analyze/${r.ticker}'">
                 <td class="px-4 py-3 font-bold text-slate-900">${r.ticker}</td>
                 <td class="px-4 py-3 text-slate-600 max-w-[160px] truncate">${r.name}</td>
-                <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell">${r.sector}</td>
+                <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell">${r.sector || '—'}</td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-2 justify-center">
                         <div class="w-16 bg-slate-100 rounded-full h-1.5 hidden sm:block">
-                            <div class="h-1.5 rounded-full ${barColor}" style="width:${barPct}%"></div>
+                            <div class="h-1.5 rounded-full ${barColor}" style="width:${r.consensus}%"></div>
                         </div>
                         <span class="font-bold text-slate-800 w-8 text-center">${r.consensus}</span>
                     </div>
