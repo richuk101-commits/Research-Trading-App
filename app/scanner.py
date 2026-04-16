@@ -15,34 +15,61 @@ from app.analyzer import (
 )
 
 UNIVERSE = [
-    # Mega-cap Tech (29)
+    # === TECHNOLOGY (52) ===
+    # Mega-cap
     "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "AMD",
-    "ADBE", "CRM", "ORCL", "INTC", "QCOM", "AVGO", "TXN", "MU",
-    "AMAT", "LRCX", "NOW", "SNPS", "CDNS", "PLTR", "SNOW",
-    "CRWD", "PANW", "FTNT", "NET", "DDOG", "ZS",
-    # Financials (22)
+    # Software / SaaS
+    "ADBE", "CRM", "ORCL", "NOW", "INTU", "SNPS", "CDNS", "ANSS",
+    "CTSH", "ACN", "IBM", "DELL",
+    # Semiconductors
+    "INTC", "QCOM", "AVGO", "TXN", "MU", "AMAT", "LRCX", "KLAC",
+    "MRVL", "ON", "TER", "ENTG",
+    # Cloud / Cybersecurity / AI
+    "PLTR", "SNOW", "CRWD", "PANW", "FTNT", "NET", "DDOG", "ZS",
+    "OKTA", "HUBS", "PAYC", "VEEV",
+    # Fintech payments
+    "PYPL", "FISV", "FI", "GPN",
+    # === FINANCIALS (33) ===
     "JPM", "V", "MA", "BAC", "GS", "MS", "WFC", "AXP", "BLK", "SCHW",
-    "C", "COF", "USB", "PNC", "SPGI", "MCO", "ICE", "CME", "BX", "KKR", "PYPL", "FI",
-    # Healthcare (19)
+    "C", "COF", "USB", "PNC", "TFC", "SPGI", "MCO", "ICE", "CME",
+    "BX", "KKR", "APO", "ARES",
+    "MTB", "RF", "HBAN", "KEY", "CFG", "SYF", "DFS",
+    "CB", "PGR", "MET",
+    # === HEALTHCARE (30) ===
     "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "TMO", "ABT", "AMGN",
-    "GILD", "REGN", "VRTX", "BMY", "CVS", "CI", "ELV", "ISRG", "MDT", "DHR",
-    # Consumer Staples (10)
-    "WMT", "COST", "PG", "KO", "PEP", "MDLZ", "CL", "MKC", "GIS", "CHD",
-    # Consumer Discretionary (13)
-    "MCD", "HD", "NKE", "SBUX", "TGT", "LOW", "TJX", "ROST", "ABNB", "BKNG", "CMG", "HLT", "MAR",
-    # Energy (10)
-    "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "VLO", "OXY", "PSX", "DVN",
-    # Industrials (15)
-    "CAT", "HON", "RTX", "DE", "BA", "GE", "LMT", "NOC", "GD", "UNP", "UPS", "FDX", "CTAS", "ETN", "EMR",
-    # Communication & Media (5)
-    "NFLX", "DIS", "T", "VZ", "TMUS",
-    # Materials (6)
-    "LIN", "APD", "SHW", "ECL", "FCX", "NEM",
-    # REITs & Utilities (5)
-    "PLD", "AMT", "EQIX", "NEE", "DUK",
-    # Misc (3)
-    "UBER", "COIN", "SOFI",
-]  # 137 total
+    "GILD", "REGN", "VRTX", "BMY", "CVS", "CI", "ELV", "ISRG", "MDT",
+    "DHR", "BSX", "SYK", "ZBH", "BDX", "HCA", "HUM", "MOH",
+    "IDXX", "A", "IQV", "RMD",
+    # === CONSUMER STAPLES (15) ===
+    "WMT", "COST", "PG", "KO", "PEP", "MDLZ", "CL", "MKC", "GIS",
+    "CHD", "STZ", "KHC", "CAG", "SJM", "HSY",
+    # === CONSUMER DISCRETIONARY (22) ===
+    "MCD", "HD", "NKE", "SBUX", "TGT", "LOW", "TJX", "ROST", "ABNB",
+    "BKNG", "CMG", "HLT", "MAR", "YUM", "DRI", "POOL", "ULTA",
+    "F", "GM", "TSCO", "EXPE", "LVS",
+    # === ENERGY (15) ===
+    "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "VLO", "OXY", "PSX",
+    "DVN", "HAL", "BKR", "FANG", "APA", "MRO",
+    # === INDUSTRIALS (28) ===
+    "CAT", "HON", "RTX", "DE", "BA", "GE", "LMT", "NOC", "GD", "UNP",
+    "UPS", "FDX", "CTAS", "ETN", "EMR", "PH", "MMM", "ITW", "ROK",
+    "DOV", "XYL", "OTIS", "CARR", "TT", "IR", "FAST", "RSG", "WM",
+    # === COMMUNICATION & MEDIA (12) ===
+    "NFLX", "DIS", "T", "VZ", "TMUS", "CHTR", "CMCSA",
+    "PARA", "OMC", "IPG", "FOXA", "WBD",
+    # === MATERIALS (10) ===
+    "LIN", "APD", "SHW", "ECL", "FCX", "NEM", "ALB", "CF", "MOS", "FMC",
+    # === REITs (12) ===
+    "PLD", "AMT", "EQIX", "CCI", "SPG", "O", "WELL", "PSA", "AVB", "EQR",
+    "VICI", "WPC",
+    # === UTILITIES (10) ===
+    "NEE", "DUK", "SO", "D", "AEP", "EXC", "XEL", "PCG", "AWK", "ES",
+    # === GROWTH / FINTECH / INTERNATIONAL (18) ===
+    "UBER", "COIN", "SOFI", "SQ", "AFRM",
+    "SHOP", "MELI", "SE", "NU", "DKNG",
+    "HOOD", "DASH", "LYFT", "RBLX", "U",
+    "TSM", "ASML", "SAP",
+]  # 257 total
 
 BATCH_SIZE = 5
 TOTAL_BATCHES = (len(UNIVERSE) + BATCH_SIZE - 1) // BATCH_SIZE

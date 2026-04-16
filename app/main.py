@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.analyzer import analyze_stock, _make_session, SEED_SNAPSHOT_RESULTS
 from app.scanner import BATCH_SIZE, TOTAL_BATCHES, UNIVERSE, batch_scan
-from app.db import get_latest_scan, save_scan
+from app.db import get_latest_scan, save_scan, get_scan_history, get_scan_by_id
 
 app = FastAPI(title="Trading Research App")
 templates = Jinja2Templates(directory="app/templates")
@@ -247,8 +247,22 @@ async def api_scan_save(request: Request):
         1 for r in results
         if r.get("consensus", 0) >= 75 and r.get("bullish_count", 0) >= 7
     )
-    ok = save_scan(results, passed_count)
+    ok = save_scan(results, passed_count, total_scanned=len(results))
     return {"ok": ok}
+
+
+@app.get("/api/scan/history")
+async def api_scan_history(limit: int = 20):
+    history = get_scan_history(limit=min(limit, 20))
+    return {"history": history}
+
+
+@app.get("/api/scan/history/{scan_id}")
+async def api_scan_history_detail(scan_id: int):
+    row = get_scan_by_id(scan_id)
+    if not row:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"id": row.get("id"), "scanned_at": row.get("scanned_at"), "results": row.get("results", [])}
 
 
 @app.get("/api/search")

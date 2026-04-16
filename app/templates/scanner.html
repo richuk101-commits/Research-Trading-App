@@ -14,12 +14,15 @@
         }
         .progress-bar { transition: width 0.4s ease; }
         tr.result-row:hover { background-color: #F8FAFC; cursor: pointer; }
+        .history-card { transition: all 0.15s ease; }
+        .history-card.active { border-color: #3B82F6 !important; background: #EFF6FF !important; }
+        .history-card:hover:not(.active) { border-color: #94A3B8; background: #F8FAFC; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
     <!-- Nav -->
-    <nav class="w-full max-w-5xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center border-b border-slate-200 bg-white">
+    <nav class="w-full max-w-6xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center border-b border-slate-200 bg-white">
         <a href="/" class="flex items-center gap-2 group">
             <svg class="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -35,25 +38,41 @@
         </div>
     </nav>
 
-    <main class="flex-grow w-full max-w-5xl mx-auto px-4 py-8 sm:px-6">
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8 sm:px-6">
 
         <!-- Header -->
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900">Top Picks</h1>
-                <p class="text-slate-500 mt-1">Stocks where 7 or more of our 10 legendary investors agree — consensus score ≥ 75.</p>
+                <h1 class="text-3xl font-bold text-slate-900">Daily Scanner</h1>
+                <p class="text-slate-500 mt-1">{{ total_stocks }} stocks • 10 investor frameworks • updated daily.</p>
             </div>
             <div class="flex items-center gap-3">
                 <span id="scan-meta" class="text-xs text-slate-400"></span>
                 <button id="btn-scan" onclick="startScan()"
                         class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-full transition-colors whitespace-nowrap">
-                    Run Scan
+                    Run Today's Scan
                 </button>
             </div>
         </div>
 
+        <!-- Daily history strip -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Past 20 Scans</h2>
+                <span id="history-status" class="text-xs text-slate-400"></span>
+            </div>
+            <div id="history-strip" class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                <!-- History cards injected by JS -->
+                <div id="history-loading" class="flex gap-2">
+                    <div class="stitch-card px-4 py-3 text-xs text-slate-400 animate-pulse w-24 h-16 flex-shrink-0"></div>
+                    <div class="stitch-card px-4 py-3 text-xs text-slate-400 animate-pulse w-24 h-16 flex-shrink-0"></div>
+                    <div class="stitch-card px-4 py-3 text-xs text-slate-400 animate-pulse w-24 h-16 flex-shrink-0"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Progress (hidden when idle) -->
-        <div id="progress-section" class="mb-8 hidden">
+        <div id="progress-section" class="mb-6 hidden">
             <div class="stitch-card p-5">
                 <div class="flex justify-between items-center mb-3">
                     <p id="progress-label" class="text-sm font-medium text-slate-700">Scanning universe…</p>
@@ -62,7 +81,7 @@
                 <div class="w-full bg-slate-100 rounded-full h-2.5">
                     <div id="progress-bar" class="progress-bar h-2.5 rounded-full bg-blue-500" style="width:0%"></div>
                 </div>
-                <p id="progress-sub" class="text-xs text-slate-400 mt-2">Scanning {{ total_stocks }} stocks across {{ total_batches }} batches — takes about 30 seconds.</p>
+                <p id="progress-sub" class="text-xs text-slate-400 mt-2">Screening {{ total_stocks }} stocks across {{ total_batches }} batches — takes about 60 seconds.</p>
             </div>
         </div>
 
@@ -70,7 +89,7 @@
         <div id="results-section" class="hidden">
 
             <!-- Passed filter (expanded by default) -->
-            <div class="mb-6">
+            <div class="mb-4">
                 <button onclick="toggleSection('passed')"
                         class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
                     <span class="flex items-center gap-2 font-bold text-slate-900">
@@ -105,7 +124,7 @@
             </div>
 
             <!-- Did Not Pass (collapsed by default) -->
-            <div class="mb-6">
+            <div class="mb-4">
                 <button onclick="toggleSection('failed')"
                         class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
                     <span class="flex items-center gap-2 font-bold text-slate-900">
@@ -137,17 +156,20 @@
             </div>
         </div>
 
-        <!-- Empty state (first visit, no cache) -->
+        <!-- Empty state -->
         <div id="empty-state" class="stitch-card p-12 text-center">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-5">
                 <svg class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
             </div>
-            <h2 class="text-xl font-bold text-slate-900 mb-2">No scan results yet</h2>
-            <p class="text-slate-500 mb-6 max-w-md mx-auto">Click Run Scan to screen {{ total_stocks }} stocks through all 10 investor frameworks. Takes about 60 seconds.</p>
+            <h2 class="text-xl font-bold text-slate-900 mb-2">No scan yet today</h2>
+            <p class="text-slate-500 mb-6 max-w-md mx-auto">
+                Click <strong>Run Today's Scan</strong> to screen {{ total_stocks }} stocks through all 10 investor frameworks.<br>
+                Come back daily — each run is saved so you can compare results over time.
+            </p>
             <button onclick="startScan()" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full transition-colors">
-                Run Scan Now
+                Run Today's Scan
             </button>
         </div>
 
@@ -159,21 +181,27 @@
 
     <script>
         const TOTAL_BATCHES  = {{ total_batches }};
-        const CACHE_KEY      = 'investor_lens_scan';
-        const CACHE_TTL_MS   = 24 * 60 * 60 * 1000; // 24 hours
-        const PARALLEL_FETCH = 4; // batches to fire at once
+        const CACHE_KEY      = 'investor_lens_scan_v2';
+        const CACHE_TTL_MS   = 6 * 60 * 60 * 1000; // 6 hours local cache
+        const PARALLEL_FETCH = 4;
 
-        let isScanning = false;
+        let isScanning       = false;
+        let activeHistoryId  = null; // which history card is highlighted
 
         // ── Startup ────────────────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Load history from server
+            await loadHistory();
+
+            // Show local cache if fresh
             const cached = loadCache();
             if (cached) {
                 renderResults(cached.results, cached.scannedAt);
             }
+            // else empty state stays visible
         });
 
-        // ── Cache helpers ──────────────────────────────────────────────────
+        // ── Local cache ────────────────────────────────────────────────────
         function loadCache() {
             try {
                 const raw = localStorage.getItem(CACHE_KEY);
@@ -184,10 +212,78 @@
             } catch { return null; }
         }
 
-        function saveCache(results) {
+        function saveLocalCache(results) {
             try {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ results, scannedAt: Date.now() }));
             } catch {}
+        }
+
+        // ── History strip ──────────────────────────────────────────────────
+        async function loadHistory() {
+            try {
+                const resp = await fetch('/api/scan/history');
+                const data = await resp.json();
+                renderHistory(data.history || []);
+            } catch {
+                document.getElementById('history-loading').innerHTML =
+                    '<span class="text-xs text-slate-400 italic">Could not load history</span>';
+                document.getElementById('history-status').textContent = '';
+            }
+        }
+
+        function renderHistory(history) {
+            const strip = document.getElementById('history-strip');
+
+            if (!history.length) {
+                strip.innerHTML = '<span class="text-xs text-slate-400 italic py-4">No saved scans yet — run your first scan!</span>';
+                document.getElementById('history-status').textContent = '';
+                return;
+            }
+
+            document.getElementById('history-status').textContent =
+                `${history.length} scan${history.length !== 1 ? 's' : ''} saved`;
+
+            strip.innerHTML = history.map(item => {
+                const d        = new Date(item.scanned_at);
+                const today    = new Date();
+                const isToday  = d.toDateString() === today.toDateString();
+                const dateStr  = isToday ? 'Today' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                const timeStr  = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                const passedN  = item.passed_count || 0;
+                const scannedN = item.total_scanned || 0;
+                return `
+                <div id="hist-${item.id}"
+                     onclick="loadHistoryScan(${item.id})"
+                     class="history-card stitch-card flex-shrink-0 w-28 px-3 py-2.5 cursor-pointer">
+                    <div class="text-xs font-bold text-slate-700 mb-0.5">${dateStr}</div>
+                    <div class="text-[10px] text-slate-400 mb-1.5">${timeStr}</div>
+                    <div class="text-xs font-semibold ${passedN > 0 ? 'text-emerald-600' : 'text-slate-400'}">
+                        ${passedN} passed
+                    </div>
+                    <div class="text-[10px] text-slate-400">${scannedN} scanned</div>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadHistoryScan(id) {
+            // Highlight the selected card
+            if (activeHistoryId) {
+                document.getElementById(`hist-${activeHistoryId}`)?.classList.remove('active');
+            }
+            activeHistoryId = id;
+            document.getElementById(`hist-${id}`)?.classList.add('active');
+
+            // Fetch full results
+            try {
+                const resp = await fetch(`/api/scan/history/${id}`);
+                if (!resp.ok) throw new Error('not found');
+                const data = await resp.json();
+                renderResults(data.results || [], new Date(data.scanned_at).getTime());
+                document.getElementById('scan-meta').textContent =
+                    `Historical scan — ${new Date(data.scanned_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`;
+            } catch {
+                alert('Could not load that scan — it may have expired.');
+            }
         }
 
         // ── Scan orchestration ─────────────────────────────────────────────
@@ -204,12 +300,11 @@
             const allResults = [];
             let batchesDone  = 0;
 
-            // Fire batches in windows of PARALLEL_FETCH at a time
             for (let start = 0; start < TOTAL_BATCHES; start += PARALLEL_FETCH) {
                 const end     = Math.min(start + PARALLEL_FETCH, TOTAL_BATCHES);
                 const indices = Array.from({ length: end - start }, (_, i) => start + i);
 
-                setProgress(batchesDone, TOTAL_BATCHES, start, end);
+                setProgress(batchesDone, TOTAL_BATCHES);
 
                 const settled = await Promise.allSettled(
                     indices.map(n =>
@@ -228,13 +323,21 @@
                 batchesDone += indices.length;
                 setProgress(batchesDone, TOTAL_BATCHES);
 
-                // Brief pause between windows so Yahoo Finance doesn't rate-limit
                 if (end < TOTAL_BATCHES) await sleep(800);
             }
 
             await sleep(300);
 
-            saveCache(allResults);
+            // Save to local cache
+            saveLocalCache(allResults);
+
+            // Auto-save to server (fire and forget)
+            fetch('/api/scan/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ results: allResults }),
+            }).then(() => loadHistory()).catch(() => {});
+
             renderResults(allResults, Date.now());
 
             document.getElementById('progress-section').classList.add('hidden');
@@ -248,7 +351,7 @@
             document.getElementById('progress-bar').style.width = pct + '%';
             document.getElementById('progress-pct').textContent  = pct + '%';
             document.getElementById('progress-label').textContent =
-                done < total ? `Scanning… (${done} of ${total} batches done)` : 'Building results…';
+                done < total ? `Scanning… (${done} of ${total} batches complete)` : 'Building results…';
         }
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -261,7 +364,7 @@
             chevron.style.transform = hidden ? 'rotate(-90deg)' : 'rotate(0deg)';
         }
 
-        // ── Render ─────────────────────────────────────────────────────────
+        // ── Render results ─────────────────────────────────────────────────
         function renderResults(results, scannedAt) {
             results.sort((a, b) => b.consensus - a.consensus);
 
@@ -270,9 +373,10 @@
 
             const age  = Math.round((Date.now() - scannedAt) / 60000);
             const when = age < 2 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
-            document.getElementById('scan-meta').textContent = `${results.length} stocks scanned • ${when}`;
+            document.getElementById('scan-meta').textContent =
+                `${results.length} stocks scanned • ${when} • ${passed.length} passed`;
 
-            // Passed section
+            // Passed
             document.getElementById('passed-count').textContent = `(${passed.length})`;
             if (passed.length === 0) {
                 document.getElementById('passed-empty').classList.remove('hidden');
@@ -283,7 +387,7 @@
                 document.getElementById('passed-tbody').innerHTML = passed.map(rowHtml).join('');
             }
 
-            // Did Not Pass section
+            // Did Not Pass
             document.getElementById('failed-count').textContent = `(${failed.length})`;
             document.getElementById('failed-tbody').innerHTML = failed.map(rowHtml).join('');
 
@@ -299,7 +403,7 @@
             return `
             <tr class="result-row" onclick="window.location='/analyze/${r.ticker}'">
                 <td class="px-4 py-3 font-bold text-slate-900">${r.ticker}</td>
-                <td class="px-4 py-3 text-slate-600 max-w-[160px] truncate">${r.name}</td>
+                <td class="px-4 py-3 text-slate-600 max-w-[160px] truncate">${r.name || r.ticker}</td>
                 <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell">${r.sector || '—'}</td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-2 justify-center">
