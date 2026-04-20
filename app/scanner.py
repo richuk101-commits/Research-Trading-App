@@ -23,112 +23,368 @@ from app.analyzer import (
 DAILY_SCAN_SIZE = 10
 
 UNIVERSE = [
-    # === TECHNOLOGY (72) ===
+
+    # ── TECHNOLOGY ────────────────────────────────────────────────────────
     # Mega-cap platforms
     "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "AMD",
-    # Enterprise software / SaaS
-    "ADBE", "CRM", "ORCL", "NOW", "INTU", "SNPS", "CDNS", "ANSS",
-    "CTSH", "ACN", "IBM", "DELL", "HPE", "HPQ",
-    "VEEV", "HUBS", "PAYC", "PCTY", "TWLO", "ZI", "NTNX", "MDB",
-    "CFLT", "GTLB", "BILL", "ESTC", "DOMO",
-    # Semiconductors
+    # Enterprise software / ERP
+    "ADBE", "CRM", "ORCL", "NOW", "INTU", "WDAY", "ADSK", "ANSS",
+    "SNPS", "CDNS", "SSNC", "JKHY", "ACIW", "PEGA", "MANH", "PCOR",
+    "VRNT", "DSGX", "TNET", "EVBG", "PRFT", "PLXS",
+    # IT services / consulting
+    "ACN", "IBM", "CTSH", "EPAM", "GLOB", "WIT", "EXLS", "CACI",
+    "SAIC", "LDOS", "BAH", "TTEC",
+    # Hardware / storage
+    "DELL", "HPE", "HPQ", "NTAP", "STX", "WDC", "SMCI", "ARM", "LOGI",
+    # Semiconductors — large
     "INTC", "QCOM", "AVGO", "TXN", "MU", "AMAT", "LRCX", "KLAC",
     "MRVL", "ON", "TER", "ENTG", "MCHP", "SWKS", "QRVO", "MPWR",
-    # Cloud / Cybersecurity / AI
-    "PLTR", "SNOW", "CRWD", "PANW", "FTNT", "NET", "DDOG", "ZS",
-    "OKTA", "CSCO",
-    # Consumer Internet
-    "PINS", "SNAP", "EBAY", "ETSY", "GDDY", "TRIP", "YELP",
-    # Fintech / Payments
-    "PYPL", "FISV", "FI", "GPN", "WEX", "EPAM",
-    # === FINANCIALS (52) ===
-    # Banks — large
-    "JPM", "BAC", "WFC", "C", "USB", "PNC", "TFC", "MTB",
-    "RF", "HBAN", "KEY", "CFG", "ZION", "CMA", "WAL",
+    # Semiconductors — specialty
+    "CRUS", "SLAB", "WOLF", "AMBA", "ONTO", "FORM", "KLIC", "UCTT",
+    "ACMR", "MKSI", "OLED", "LSCC", "MTSI", "COHU",
+    # Cloud / AI / data
+    "PLTR", "SNOW", "MDB", "DDOG", "ESTC", "CFLT", "GTLB", "NTNX",
+    "PSTG", "DOCN",
+    # Cybersecurity
+    "CRWD", "PANW", "FTNT", "NET", "ZS", "OKTA", "CYBR", "TENB",
+    "QLYS", "S", "RPD",
+    # SaaS / HCM / finance software
+    "HUBS", "PAYC", "PCTY", "VEEV", "NCNO", "BILL", "FOUR", "ALRM",
+    "TWLO", "ZI", "RNG", "FIVN", "NICE", "EGHT",
+    # Networking / comms infra
+    "CSCO", "JNPR", "ANET",
+    # Consumer internet / marketplaces
+    "PINS", "SNAP", "EBAY", "ETSY", "GDDY", "TRIP", "YELP", "IAC",
+    "WIX", "BIGC", "SQUSP",
+    # Payments / fintech
+    "PYPL", "FISV", "FI", "GPN", "WEX", "ADP", "PAYX",
+    # Digital advertising / ad-tech
+    "TTD", "DV", "IAS", "MGNI", "PUBM", "CRTO", "APPS",
+    # New-era / AI / quantum
+    "IONQ", "MSTR", "RIOT", "MARA",
+
+    # ── FINANCIALS ────────────────────────────────────────────────────────
+    # Banks — money-center
+    "JPM", "BAC", "WFC", "C", "GS", "MS",
+    # Banks — super-regional
+    "USB", "PNC", "TFC", "MTB", "RF", "HBAN", "KEY", "CFG",
+    "ZION", "CMA", "WAL", "BOKF", "COLB", "GBCI", "TCBI",
+    "FFIN", "CADE", "SFNC", "CBU", "UMBF", "WSFS", "BANR",
+    "HOPE", "CVBF", "HAFC",
     # Capital markets
-    "GS", "MS", "SCHW", "AXP", "BLK", "V", "MA",
-    "SPGI", "MCO", "ICE", "CME", "BX", "KKR", "APO", "ARES",
+    "AXP", "BLK", "SCHW", "SPGI", "MCO", "ICE", "CME",
+    "BX", "KKR", "APO", "ARES", "CG",
     "TROW", "BEN", "IVZ", "NTRS", "STT", "BK", "AMP",
+    "LAZ", "EVR", "PJT", "LPLA", "RJF", "STEP", "HLNE",
+    "MKTX", "VIRTU",
+    # Financial data / analytics
+    "V", "MA", "MSCI", "FDS", "SPGI", "EFX", "TRU",
     # Insurance
     "CB", "PGR", "MET", "AIG", "AFL", "ALL", "HIG", "TRV",
-    "PRU", "EQH", "MKL", "WRB", "L",
-    # Fintech
-    "SYF", "DFS", "COF", "PYPL", "SQ",
-    # === HEALTHCARE (45) ===
-    # Large pharma / biotech
-    "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "TMO", "ABT", "AMGN",
-    "GILD", "REGN", "VRTX", "BMY", "BIIB", "MRNA", "ALNY", "NBIX",
-    "EXAS", "INCY", "JAZZ", "VTRS",
-    # Med devices
-    "ISRG", "MDT", "DHR", "BSX", "SYK", "ZBH", "BDX", "EW",
-    "ALGN", "HOLX", "PODD", "RMD", "IDXX", "MTD", "WAT",
-    # Health services / PBMs
-    "CVS", "CI", "ELV", "HCA", "HUM", "MOH", "CNC",
-    "A", "IQV", "NTRA", "TDOC",
-    # === CONSUMER STAPLES (22) ===
+    "PRU", "EQH", "MKL", "WRB", "L", "RNR", "ERIE", "GL",
+    "AFG", "VOYA", "SFG", "PFG", "LNC", "UNM", "FNF", "FAF",
+    # Consumer finance
+    "COF", "SYF", "DFS", "SQ", "ALLY", "SLM", "OMF", "ENVA",
+    "CACC", "NAVI",
+
+    # ── HEALTHCARE ────────────────────────────────────────────────────────
+    # Large-cap pharma
+    "LLY", "JNJ", "ABBV", "MRK", "PFE", "BMY", "AMGN", "GILD",
+    "BIIB", "VTRS", "PRGO",
+    # Large-cap biotech
+    "REGN", "VRTX", "MRNA", "ALNY", "NBIX", "INCY", "JAZZ",
+    "ILMN", "BMRN", "SRPT", "RCKT", "NKTR", "ACAD", "HALO",
+    "VKTX", "CRSP", "NTLA", "EDIT", "BEAM", "PACB",
+    # Pharma ADRs
+    "SNY", "AZN", "GSK", "NVO",
+    # Managed care / health services
+    "UNH", "CVS", "CI", "ELV", "HCA", "HUM", "MOH", "CNC",
+    "PINC", "AMED", "ENSG", "ADUS", "OPCH",
+    # Diagnostics / life sciences
+    "TMO", "DHR", "A", "IQV", "WAT", "MTD", "IDXX",
+    "EXAS", "NTRA", "SDGR", "RXRX", "TWST",
+    # Medical devices
+    "ABT", "MDT", "BSX", "SYK", "ZBH", "BDX", "EW", "ISRG",
+    "ALGN", "HOLX", "PODD", "RMD", "IART", "NVCR", "NUVA",
+    "MMSI", "ITGR", "ICUI", "OMCL", "STE", "XRAY",
+    # Animal health / specialty
+    "ZTS", "PAHC",
+    # Health IT
+    "TDOC", "HIMS", "RXRX",
+    # Royalty
+    "RPRX",
+
+    # ── CONSUMER STAPLES ──────────────────────────────────────────────────
     "WMT", "COST", "PG", "KO", "PEP", "MDLZ", "CL", "MKC", "GIS",
     "CHD", "STZ", "KHC", "CAG", "SJM", "HSY", "HRL", "CPB",
-    "EL", "CLX", "MO", "PM", "ADM",
-    # === CONSUMER DISCRETIONARY (35) ===
-    # Restaurants / hospitality
-    "MCD", "SBUX", "CMG", "YUM", "DRI", "HLT", "MAR", "WYNN", "MGM", "LVS",
-    # Retail / e-commerce
-    "HD", "LOW", "TGT", "TJX", "ROST", "TSCO", "ULTA", "BBY",
-    "AZO", "ORLY", "GPC",
-    # Autos
-    "NKE", "F", "GM", "APTV", "LEA",
-    # Travel / leisure
-    "ABNB", "BKNG", "EXPE", "POOL", "RCL", "CCL", "NCLH",
-    # Apparel / luxury
-    "LULU", "RH", "WSM", "W",
-    # === ENERGY (25) ===
-    "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "VLO", "OXY", "PSX",
-    "DVN", "HAL", "BKR", "FANG", "APA", "MRO",
-    "KMI", "WMB", "OKE", "TRGP", "HES",
-    "PR", "SM", "MTDR", "HP", "NOV",
-    # === INDUSTRIALS (38) ===
+    "EL", "CLX", "MO", "PM", "ADM", "BG", "INGR", "POST",
+    "SFM", "GO", "BJ", "PFGC", "CHEF", "LANC", "FRPT",
+    "NWL", "ENR", "SPB", "KDP",
+
+    # ── CONSUMER DISCRETIONARY ────────────────────────────────────────────
+    # Restaurants
+    "MCD", "SBUX", "CMG", "YUM", "DRI", "TXRH", "EAT", "CAKE",
+    "JACK", "SHAK", "FAT",
+    # Hotels / gaming
+    "HLT", "MAR", "H", "IHG", "CHH", "WH",
+    "WYNN", "MGM", "LVS", "CZR", "PENN", "DKNG",
+    # Travel
+    "ABNB", "BKNG", "EXPE", "TCOM",
+    "RCL", "CCL", "NCLH",
+    "DAL", "UAL", "LUV", "AAL", "ALK", "JBLU",
+    # Home improvement / specialty retail
+    "HD", "LOW", "TGT", "TSCO", "POOL", "TREX",
+    "BBY", "FIVE", "OLLI", "DG", "DLTR",
+    "AZO", "ORLY", "GPC", "AAP",
+    "FND", "RH", "WSM", "W", "ARHS",
+    # Fashion / apparel
+    "NKE", "LULU", "ULTA",
+    "CPRI", "TPR", "PVH", "RL", "HBI", "GIII", "UAA", "VFC",
+    "KSS", "M", "JWN", "BURL", "TJX", "ROST",
+    # Auto
+    "F", "GM", "APTV", "LEA", "GNTX",
+    "LAD", "SAH", "AN", "KMX", "PAG", "CVNA",
+    "RIVN", "LCID",
+    # Fitness / wellness
+    "PTON", "PLNT",
+    # E-commerce / pets
+    "CHWY", "WOOF", "CPNG",
+    # Homebuilders
+    "DHI", "LEN", "PHM", "TOL", "NVR", "KBH", "MDC", "MHO", "TPH", "TMHC",
+
+    # ── ENERGY ────────────────────────────────────────────────────────────
+    # Integrated / majors
+    "XOM", "CVX", "COP", "HES", "OVV",
+    "BP", "SHEL", "TTE",
+    # E&P
+    "EOG", "OXY", "DVN", "APA", "MRO", "FANG", "PR", "SM",
+    "MTDR", "CIVI", "CHRD", "EQT", "AR", "RRC", "CNX", "SWN",
+    # Refining / downstream
+    "MPC", "VLO", "PSX",
+    # Oil services
+    "SLB", "HAL", "BKR", "NOV", "HP", "NBR",
+    # Midstream / pipelines
+    "KMI", "WMB", "OKE", "TRGP", "ET", "EPD", "AM", "ENLC",
+    # Clean / renewable energy
+    "ENPH", "SEDG", "RUN", "NOVA", "ARRY", "MAXN",
+    "PLUG", "FCEL", "BE", "CWEN",
+
+    # ── INDUSTRIALS ───────────────────────────────────────────────────────
     # Defence / aerospace
     "LMT", "RTX", "NOC", "GD", "BA", "TDG", "HEICO",
-    # Diversified / machinery
+    "HII", "CW", "KTOS", "MOOG", "AVAV", "TDY", "DRS", "AXON",
+    # Machinery / diversified
     "HON", "GE", "CAT", "DE", "ETN", "EMR", "PH", "MMM", "ITW",
-    "ROK", "DOV", "CARR", "OTIS", "TT", "IR", "FAST",
-    # Transport / logistics
+    "ROK", "DOV", "CARR", "OTIS", "TT", "IR",
+    "PNR", "GNRC", "FELE", "MWA",
+    "HUBB", "ALLE", "MIDD", "LECO", "RRX", "NDSN", "AME", "LFUS",
+    "ROPER", "IDEX", "SPX", "CFX",
+    # Freight / logistics
     "UNP", "NSC", "CSX", "UPS", "FDX", "PCAR", "CPRT",
-    "DAL", "UAL", "LUV", "AAL",
+    "ODFL", "SAIA", "KNX", "LSTR", "CHRW", "EXPD", "XPO", "GXO",
+    "ZTO", "JBHT",
+    # Airlines
+    "DAL", "UAL", "LUV", "AAL", "ALK",
+    # Construction / building
+    "PWR", "SITE", "MTZ", "URI",
+    "BLDR", "BECN", "IBP",
     # Waste / services
-    "RSG", "WM", "CTAS", "VRSK", "BAH",
-    # === COMMUNICATION & MEDIA (18) ===
+    "RSG", "WM", "CTAS", "VRSK", "FAST",
+    # Staffing / facilities
+    "MAN", "KFRC",
+    # Rental / equipment
+    "HEES", "GATX",
+
+    # ── COMMUNICATION & MEDIA ─────────────────────────────────────────────
     "NFLX", "DIS", "T", "VZ", "TMUS", "CHTR", "CMCSA", "WBD",
-    "PARA", "FOXA", "OMC", "IPG",
-    "SNAP", "MTCH", "LYV", "TTWO", "EA",
-    "SPOT",
-    # === MATERIALS (18) ===
-    "LIN", "APD", "SHW", "ECL", "FCX", "NEM", "ALB", "CF", "MOS", "FMC",
-    "PPG", "RPM", "IFF", "MLM", "VMC",
-    "BALL", "PKG", "IP",
-    # === REITs (20) ===
-    "PLD", "AMT", "EQIX", "CCI", "SPG", "O", "WELL", "PSA", "AVB", "EQR",
-    "VICI", "WPC", "ARE", "BXP", "KIM", "REG", "NNN",
-    "EXR", "CUBE", "REXR",
-    # === UTILITIES (18) ===
+    "PARA", "FOXA", "NWSA", "NYT",
+    "OMC", "IPG", "PUB",
+    "SNAP", "PINS", "MTCH", "SPOT", "LYV",
+    "TTWO", "EA", "RBLX", "U",
+    "SIRI", "LBRDK", "ATUS",
+
+    # ── MATERIALS ─────────────────────────────────────────────────────────
+    # Chemicals
+    "LIN", "APD", "ECL", "SHW", "PPG", "RPM", "IFF",
+    "DOW", "DD", "LYB", "OLN", "HUN", "WLK", "TROX", "EMN",
+    "CF", "MOS", "FMC", "NTR",
+    # Mining / precious metals
+    "FCX", "NEM", "GOLD", "KGC", "AEM", "WPM", "AG", "CDE", "PAAS",
+    "ALB",
+    # Steel / metals
+    "NUE", "STLD", "RS", "CMC", "X", "CLF", "MT",
+    # Packaging / paper
+    "MLM", "VMC", "BALL", "PKG", "IP", "SEE", "SON", "BERY", "SILGAN",
+
+    # ── REITs ─────────────────────────────────────────────────────────────
+    # Industrial / logistics
+    "PLD", "EGP", "FR", "STAG", "TRNO", "REXR",
+    # Data centres / towers
+    "AMT", "EQIX", "CCI", "SBAC", "IRM",
+    # Retail / commercial
+    "SPG", "O", "NNN", "REG", "KIM", "FRT", "BXP", "VICI",
+    "EPRT", "NTST", "ADC", "BNL", "WPC",
+    # Residential
+    "AVB", "EQR", "ESS", "MAA", "UDR", "CPT",
+    # Healthcare
+    "WELL", "VTR", "PEAK", "HR", "DOC", "OHI", "MPW", "LTC", "NHI", "SBRA",
+    # Storage / specialty
+    "PSA", "EXR", "CUBE", "NSA",
+    "GLPI", "COLD", "IIPR",
+
+    # ── UTILITIES ─────────────────────────────────────────────────────────
     "NEE", "DUK", "SO", "D", "AEP", "EXC", "XEL", "PCG", "AWK", "ES",
     "WEC", "CMS", "LNT", "NI", "ATO", "SRE", "ETR", "PPL",
-    # === GROWTH / FINTECH / INTERNATIONAL (42) ===
-    # US growth / fintech
-    "UBER", "COIN", "SOFI", "AFRM", "HOOD", "DASH", "LYFT",
-    "DKNG", "RBLX", "U", "PTON", "CHWY",
-    # Global e-commerce / platforms
-    "SHOP", "MELI", "SE", "NU",
-    # International megacaps (ADRs)
-    "TSM", "ASML", "SAP", "NVO", "INFY",
-    "BABA", "JD", "PDD", "BIDU",
+    "OGE", "PNW", "ALE", "MGE", "AVA", "IDA", "POR",
+    "WTRG", "SWX", "PEG", "FE", "CNP", "AEE",
+    "EVRG", "NWE", "OTTR",
+
+    # ── INTERNATIONAL ADRs ────────────────────────────────────────────────
+    # Asia-Pacific
+    "TSM", "ASML", "SAP", "NVO", "INFY", "WIT",
+    "SONY", "TM", "HMC", "TDK",
+    "BABA", "JD", "PDD", "BIDU", "TCOM", "BEKE",
     "NIO", "XPEV", "LI",
-    "SONY", "TM", "HMC",
-    "RACE", "LVMUY", "HESAY",
-    # Misc / thematic
-    "SQ", "HOOD", "AFRM",
-    "SMCI", "ARM", "IONQ",
-    "MSTR", "RIOT", "MARA",
+    "GRAB", "SE", "CPNG",
+    # Europe
+    "RACE", "LVMUY", "HESAY", "AZN", "GSK", "SNY",
+    "BP", "SHEL", "TTE",
+    "SIEGY", "IDEXY", "BAYRY",
+    # Latin America
+    "MELI", "NU", "ITUB", "BBD", "VALE", "PBR",
+    "PAGS", "STNE", "VTEX", "GLOB",
+    # India
+    "HDB", "IBN", "RDY",
+
+    # ── GROWTH / THEMATIC ─────────────────────────────────────────────────
+    # Fintech / neobanks
+    "SOFI", "HOOD", "AFRM", "SQ", "COIN",
+    # Mobility
+    "UBER", "LYFT", "DASH",
+    # EV / clean-tech
+    "RIVN", "LCID",
+    # Crypto infrastructure
+    "MSTR", "RIOT", "MARA", "BTBT", "HUT", "CLSK",
+    # Space / eVTOL
+    "RKLB", "JOBY", "ACHR",
+    # AI / quantum
+    "IONQ", "SMCI", "ARM", "PLTR",
+    # Entertainment / streaming / gaming
+    "NFLX", "SPOT", "DKNG", "RBLX", "U",
+    # Real estate services
+    "CBRE", "JLL",
+
+    # ── ADDITIONAL TECHNOLOGY ─────────────────────────────────────────────
+    "AKAM", "VRSN", "CHKP", "AMKR", "IPGP",
+    "FRSH", "DUOL", "MNDY", "BRZE", "INTA",
+    "APPN", "QTWO", "BLKB", "EXPO",
+    "KD", "MMS",
+    "ANET", "JNPR",
+    "CRTO", "PUBM",
+    "ALGT", "NCNO",
+
+    # ── ADDITIONAL FINANCIALS ─────────────────────────────────────────────
+    "CBOE", "NDAQ",
+    "AON", "MMC", "WTW", "AJG", "BRO", "RYAN",
+    "ACGL", "CINF", "ORI", "CNA", "HLI", "RLI",
+    "SEIC", "VRTS", "APAM",
+    "PFSI", "UWMC",
+    "WD", "NMIH", "ESNT", "MTG", "RDN",
+    "VIRT",
+
+    # ── ADDITIONAL HEALTHCARE ─────────────────────────────────────────────
+    "MEDP", "TNDM", "AXSM", "EXEL",
+    "AVTR", "CERT", "VCYT", "GH",
+    "SAGE", "ARVN", "FOLD",
+    "PRTA", "MCRB",
+    "AGIO", "ONCE", "IONS",
+    "INVA", "ONEM",
+    "HRMY", "SUPN", "PHAT",
+    "ADMA", "HROW", "OSUR",
+    "TELA", "ATEC", "NVCR",
+
+    # ── ADDITIONAL CONSUMER STAPLES ───────────────────────────────────────
+    "BTI", "DEO", "UL",
+    "CASY", "MUSA",
+    "USFD", "SYY", "PFGC",
+    "COTY", "ELF",
+
+    # ── ADDITIONAL CONSUMER DISCRETIONARY ────────────────────────────────
+    "CROX", "DECK", "ONON", "BIRK",
+    "MTN", "SCI", "PLAY", "WEN",
+    "SFIX", "REAL",
+    "MHK", "WHR", "FBHS", "FBIN",
+    "LKQ", "MNRO", "MTOR",
+    "APTV", "BWA", "LEA",
+    "TPVG",
+    "EVGO", "CHPT",
+
+    # ── ADDITIONAL ENERGY ─────────────────────────────────────────────────
+    "AES", "CHK", "STR", "VTLE",
+    "OVV",
+    "CWEN", "NEP",
+    "DT", "SOC",
+
+    # ── ADDITIONAL INDUSTRIALS ────────────────────────────────────────────
+    "WSO", "ROLL", "LCII", "PATK",
+    "BCC", "UFP", "UFPI",
+    "MHK", "PGNY",
+    "SRCL", "CIVI",
+    "ACCO", "NN",
+    "STRA", "KFRC",
+    "UHAL", "AMERCO",
+    "GMS", "BECN",
+    "FTAI",
+
+    # ── ADDITIONAL COMMUNICATION ──────────────────────────────────────────
+    "NWSA", "NYT",
+    "IACI", "SIRI",
+    "WMG", "PARAA",
+    "SEAT", "IHRT",
+
+    # ── ADDITIONAL MATERIALS ──────────────────────────────────────────────
+    "OLN", "RPM",
+    "CSTM", "CENX", "AA",
+    "BTG", "OR", "KGC",
+    "FNV", "RGLD", "MAG",
+    "HL", "FSM",
+
+    # ── ADDITIONAL REITs ──────────────────────────────────────────────────
+    "AMH", "INVH", "AIRC", "NHC",
+    "DEA", "JBGS", "HIW", "PDM",
+    "NXRT", "GOOD", "LAND",
+    "SVC", "APLE", "RHP",
+    "ROIC", "UE", "RPAI",
+
+    # ── ADDITIONAL UTILITIES ──────────────────────────────────────────────
+    "AES", "BKH", "CLNE",
+    "SJW", "ARTNA", "CWCO",
+    "LABL", "UGI",
+    "NFG", "RGCO",
+    "MGEE", "YORW",
+
+    # ── ADDITIONAL INTERNATIONAL ──────────────────────────────────────────
+    "UL", "DEO", "BTI",
+    "AZN", "GSK",
+    "KEP", "SKM", "KT",
+    "NSRGY", "RHHBY",
+    "IQ", "VNET", "KC",
+    "BRFS", "CIG", "CBD",
+    "HTHT", "TAL",
+    "GRAB", "GOTO",
+    "TME", "HUYA", "DOYU",
+
+    # ── ADDITIONAL GROWTH / THEMATIC ─────────────────────────────────────
+    "OSCR", "ACIC",
+    "OPEN", "OPFI",
+    "JOBY", "ACHR", "EVTL",
+    "STEM", "SPWR", "CSIQ",
+    "DKNG", "PENN", "GENI",
+    "SMAR", "PCOR",
+    "DOCN",
+    "GDRX", "HIMS",
+    "RELY", "NRDS",
+    "FLNC", "AAON", "ALTR", "MASI",
 ]
 
 # Deduplicate while preserving order (some tickers appear twice in source)
