@@ -78,14 +78,14 @@
             <!-- populated by JS -->
         </div>
         <!-- Scan action -->
-        <div id="scan-action" style="display:none;margin-top:20px;text-align:center;">
+        <div id="scan-action" style="margin-top:20px;text-align:center;">
             <button id="btn-scan" onclick="startScan()"
                     style="padding:14px 32px;background:var(--text);color:#fff;font-size:15px;font-weight:600;border-radius:12px;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.15);"
-                    onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(0,0,0,.2)';"
-                    onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.15)';">
+                    onmouseover="if(!this.disabled){this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(0,0,0,.2)';}"
+                    onmouseout="this.style.transform='translateY(0)';this.style.boxShadow=this.disabled?'none':'0 2px 8px rgba(0,0,0,.15)';">
                 Score Today's 10 Stocks
             </button>
-            <p style="font-size:12px;color:var(--text3);margin-top:8px;">Takes about 15–20 seconds</p>
+            <p id="scan-sub" style="font-size:12px;color:var(--text3);margin-top:8px;">Takes about 15–20 seconds</p>
         </div>
         <!-- Progress -->
         <div id="scan-progress" style="display:none;margin-top:16px;">
@@ -199,8 +199,9 @@ window.addEventListener('DOMContentLoaded', async () => {
             renderTickerGrid(todayTickers, cached.byTicker);
             scanResults = cached.results;
             renderResults(cached.results, cached.scannedAt, true);
+            setScanUsed(true);
         } else {
-            document.getElementById('scan-action').style.display = 'block';
+            setScanUsed(false);
         }
     } catch(e) {
         document.getElementById('ticker-grid').innerHTML =
@@ -239,7 +240,7 @@ function setChipDone(t, consensus, passed) {
 async function startScan() {
     if (isScanning || !todayTickers.length) return;
     isScanning = true;
-    document.getElementById('scan-action').style.display = 'none';
+    document.getElementById('scan-action').style.visibility = 'hidden';
     document.getElementById('scan-progress').style.display = 'block';
     todayTickers.forEach(setChipScanning);
     setProgress(0, 'Contacting market data…');
@@ -265,7 +266,7 @@ async function startScan() {
             await sleep(80);
         }
     } catch(e) {
-        document.getElementById('scan-action').style.display = 'block';
+        document.getElementById('scan-action').style.visibility = 'visible';
         document.getElementById('scan-progress').style.display = 'none';
         isScanning = false;
         return;
@@ -274,6 +275,7 @@ async function startScan() {
     setProgress(100, 'Complete!');
     await sleep(400);
     document.getElementById('scan-progress').style.display = 'none';
+    document.getElementById('scan-action').style.visibility = 'visible';
 
     const dateStr = new Date().toISOString().slice(0, 10);
     saveCache(dateStr, results);
@@ -286,7 +288,29 @@ async function startScan() {
 
     scanResults = results;
     renderResults(results, Date.now(), false);
+    setScanUsed(true);
     isScanning = false;
+}
+
+// ── Scan button state ─────────────────────────────────────────────────────────
+function setScanUsed(used) {
+    const btn = document.getElementById('btn-scan');
+    const sub = document.getElementById('scan-sub');
+    if (used) {
+        btn.disabled = true;
+        btn.style.background = '#E8E9EC';
+        btn.style.color = '#9CA3AF';
+        btn.style.boxShadow = 'none';
+        btn.style.cursor = 'default';
+        sub.innerHTML = '✓ Scanned today &nbsp;·&nbsp; Come back tomorrow for a fresh draw';
+    } else {
+        btn.disabled = false;
+        btn.style.background = 'var(--text)';
+        btn.style.color = '#fff';
+        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)';
+        btn.style.cursor = 'pointer';
+        sub.textContent = 'Takes about 15–20 seconds';
+    }
 }
 
 function setProgress(pct, label) {
@@ -452,7 +476,6 @@ async function loadHistoryScan(id) {
         renderTickerGrid(tickers, Object.fromEntries(results.map(r => [r.ticker, r])));
         scanResults = results;
         renderResults(results, new Date(data.scanned_at).getTime(), true);
-        document.getElementById('scan-action').style.display = 'none';
     } catch(e) { alert('Could not load that scan.'); }
 }
 </script>
