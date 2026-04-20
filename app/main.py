@@ -6,7 +6,10 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from app.analyzer import analyze_stock, _make_session, SEED_SNAPSHOT_RESULTS
-from app.scanner import BATCH_SIZE, TOTAL_BATCHES, UNIVERSE, batch_scan
+from app.scanner import (
+    BATCH_SIZE, TOTAL_BATCHES, UNIVERSE, batch_scan,
+    DAILY_SCAN_SIZE, get_daily_tickers, scan_tickers,
+)
 from app.db import get_latest_scan, save_scan, get_scan_history, get_scan_by_id
 
 app = FastAPI(title="Trading Research App")
@@ -220,6 +223,7 @@ async def scanner_page(request: Request):
             "request": request,
             "total_batches": TOTAL_BATCHES,
             "total_stocks": len(UNIVERSE),
+            "daily_scan_size": DAILY_SCAN_SIZE,
             "scan": scan,
         },
     )
@@ -249,6 +253,26 @@ async def api_scan_save(request: Request):
     )
     ok = save_scan(results, passed_count, total_scanned=len(results))
     return {"ok": ok}
+
+
+@app.get("/api/scan/daily-tickers")
+async def api_daily_tickers():
+    """Return today's DAILY_SCAN_SIZE tickers — same for all visitors on this date."""
+    from datetime import date
+    today = date.today()
+    tickers = get_daily_tickers(DAILY_SCAN_SIZE, today)
+    return {"date": today.isoformat(), "tickers": tickers, "universe_size": len(UNIVERSE)}
+
+
+@app.post("/api/scan/custom")
+async def api_scan_custom(request: Request):
+    """Scan a caller-supplied list of tickers (max 20). Used for the daily scan."""
+    body    = await request.json()
+    tickers = [t.upper().strip() for t in (body.get("tickers") or []) if t][:20]
+    if not tickers:
+        return JSONResponse({"error": "no tickers provided"}, status_code=400)
+    results = scan_tickers(tickers)
+    return {"results": results, "requested": tickers}
 
 
 @app.get("/api/scan/history")

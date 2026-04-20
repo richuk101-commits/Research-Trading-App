@@ -3,437 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top Picks — Investor Lens</title>
+    <title>Daily Scan — Investor Lens</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
         .stitch-card {
-            background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+            background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1rem;
+            box-shadow: 0 2px 6px -1px rgba(0,0,0,0.04);
         }
-        .progress-bar { transition: width 0.4s ease; }
-        tr.result-row:hover { background-color: #F8FAFC; cursor: pointer; }
-        .history-card { transition: all 0.15s ease; }
+        tr.result-row { cursor: pointer; }
+        tr.result-row:hover { background-color: #F8FAFC; }
+        .ticker-chip {
+            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid #E2E8F0; border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem; background: #fff; transition: all 0.2s;
+        }
+        .ticker-chip.scanning { border-color: #93C5FD; background: #EFF6FF; animation: pulse 1.2s infinite; }
+        .ticker-chip.done-pass { border-color: #6EE7B7; background: #ECFDF5; }
+        .ticker-chip.done-fail { border-color: #E2E8F0; background: #F8FAFC; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+        .history-card { transition: all 0.15s; }
         .history-card.active { border-color: #3B82F6 !important; background: #EFF6FF !important; }
-        .history-card:hover:not(.active) { border-color: #94A3B8; background: #F8FAFC; }
+        .history-card:hover:not(.active) { border-color: #94A3B8; }
+        .progress-bar { transition: width 0.5s ease; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <!-- Nav -->
-    <nav class="w-full max-w-6xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center border-b border-slate-200 bg-white">
-        <a href="/" class="flex items-center gap-2 group">
-            <svg class="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
-            <span class="font-medium text-slate-500 group-hover:text-slate-900 transition-colors">Home</span>
-        </a>
-        <div class="flex items-center gap-2">
-            <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
-            <span class="font-bold text-lg tracking-tight">Investor Lens</span>
+<!-- Nav -->
+<nav class="w-full max-w-6xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center border-b border-slate-200 bg-white">
+    <a href="/" class="flex items-center gap-2 group">
+        <svg class="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        <span class="font-medium text-slate-500 group-hover:text-slate-900 transition-colors">Home</span>
+    </a>
+    <div class="flex items-center gap-2">
+        <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+        <span class="font-bold text-lg tracking-tight">Investor Lens</span>
+    </div>
+</nav>
+
+<main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8 sm:px-6">
+
+    <!-- Hero header -->
+    <div class="mb-8 text-center">
+        <div class="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+            Daily Gem Hunt
         </div>
-    </nav>
+        <h1 class="text-4xl font-extrabold text-slate-900 mb-2">Today's 10 Picks</h1>
+        <p class="text-slate-500 max-w-lg mx-auto" id="hero-sub">
+            Every day, {{ daily_scan_size }} stocks are drawn from a universe of <strong>{{ total_stocks }}</strong> and
+            scored across all 10 legendary investor frameworks. Come back tomorrow for a fresh set.
+        </p>
+        <p class="text-sm font-medium text-slate-400 mt-2" id="today-date-label"></p>
+    </div>
 
-    <main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8 sm:px-6">
-
-        <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-900">Daily Scanner</h1>
-                <p class="text-slate-500 mt-1">{{ total_stocks }} stocks • 10 investor frameworks • updated daily.</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <span id="scan-meta" class="text-xs text-slate-400"></span>
-                <button id="btn-scan" onclick="startScan()"
-                        class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-full transition-colors whitespace-nowrap">
-                    Run Today's Scan
-                </button>
-            </div>
+    <!-- Today's ticker grid (pre-scan: chips, post-scan: hidden by results) -->
+    <div id="ticker-grid-section" class="mb-8">
+        <div id="ticker-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <!-- Populated by JS -->
         </div>
-
-        <!-- Daily history strip -->
-        <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Past 20 Scans</h2>
-                <span id="history-status" class="text-xs text-slate-400"></span>
-            </div>
-            <div id="history-strip" class="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-                <!-- History cards injected by JS -->
-                <div id="history-loading" class="flex gap-2">
-                    <div class="stitch-card px-4 py-3 text-xs text-slate-400 animate-pulse w-24 h-16 flex-shrink-0"></div>
-                    <div class="stitch-card px-4 py-3 text-xs text-slate-400 animate-pulse w-24 h-16 flex-shrink-0"></div>
-                    <div class="stitch-card px-4 py-3 text-xs text-slate-400 animate-pulse w-24 h-16 flex-shrink-0"></div>
-                </div>
-            </div>
+        <div id="scan-action" class="mt-6 text-center hidden">
+            <button id="btn-scan" onclick="startScan()"
+                    class="px-8 py-3 bg-slate-900 hover:bg-slate-700 text-white font-semibold rounded-full transition-colors text-sm shadow-sm">
+                Score Today's 10 Stocks
+            </button>
+            <p class="text-xs text-slate-400 mt-2">Takes about 15–20 seconds</p>
         </div>
-
-        <!-- Progress (hidden when idle) -->
-        <div id="progress-section" class="mb-6 hidden">
-            <div class="stitch-card p-5">
-                <div class="flex justify-between items-center mb-3">
-                    <p id="progress-label" class="text-sm font-medium text-slate-700">Scanning universe…</p>
+        <div id="scan-progress" class="mt-5 hidden">
+            <div class="max-w-sm mx-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <span id="progress-label" class="text-sm text-slate-600 font-medium">Scoring…</span>
                     <span id="progress-pct" class="text-sm font-bold text-slate-900">0%</span>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-2.5">
-                    <div id="progress-bar" class="progress-bar h-2.5 rounded-full bg-blue-500" style="width:0%"></div>
-                </div>
-                <p id="progress-sub" class="text-xs text-slate-400 mt-2">Screening {{ total_stocks }} stocks across {{ total_batches }} batches — takes about 60 seconds.</p>
-            </div>
-        </div>
-
-        <!-- Results -->
-        <div id="results-section" class="hidden">
-
-            <!-- Passed filter (expanded by default) -->
-            <div class="mb-4">
-                <button onclick="toggleSection('passed')"
-                        class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
-                    <span class="flex items-center gap-2 font-bold text-slate-900">
-                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                        Passed — 7+ Bullish Managers, Score ≥ 75
-                        <span id="passed-count" class="text-sm font-normal text-slate-400"></span>
-                    </span>
-                    <svg id="passed-chevron" class="h-4 w-4 text-slate-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                <div id="passed-body" class="mt-2">
-                    <div id="passed-empty" class="hidden stitch-card p-8 text-center text-slate-400 text-sm">
-                        No stocks passed the filter in this scan. The bar is intentionally high — try again tomorrow.
-                    </div>
-                    <div class="stitch-card overflow-hidden hidden" id="passed-table-wrap">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                    <th class="px-4 py-3 text-left">Ticker</th>
-                                    <th class="px-4 py-3 text-left">Company</th>
-                                    <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
-                                    <th class="px-4 py-3 text-center">Score</th>
-                                    <th class="px-4 py-3 text-center">Signal</th>
-                                    <th class="px-4 py-3 text-center">Managers</th>
-                                </tr>
-                            </thead>
-                            <tbody id="passed-tbody" class="divide-y divide-slate-50"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Did Not Pass (collapsed by default) -->
-            <div class="mb-4">
-                <button onclick="toggleSection('failed')"
-                        class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
-                    <span class="flex items-center gap-2 font-bold text-slate-900">
-                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                        Did Not Pass
-                        <span id="failed-count" class="text-sm font-normal text-slate-400"></span>
-                    </span>
-                    <svg id="failed-chevron" class="h-4 w-4 text-slate-400 transition-transform rotate-[-90deg]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                <div id="failed-body" class="mt-2 hidden">
-                    <div class="stitch-card overflow-hidden">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                    <th class="px-4 py-3 text-left">Ticker</th>
-                                    <th class="px-4 py-3 text-left">Company</th>
-                                    <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
-                                    <th class="px-4 py-3 text-center">Score</th>
-                                    <th class="px-4 py-3 text-center">Signal</th>
-                                    <th class="px-4 py-3 text-center">Managers</th>
-                                </tr>
-                            </thead>
-                            <tbody id="failed-tbody" class="divide-y divide-slate-50"></tbody>
-                        </table>
-                    </div>
+                <div class="bg-slate-100 rounded-full h-2">
+                    <div id="progress-bar" class="progress-bar h-2 rounded-full bg-blue-500" style="width:0%"></div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Empty state -->
-        <div id="empty-state" class="stitch-card p-12 text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-5">
-                <svg class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    <!-- Results (hidden until scan completes) -->
+    <div id="results-section" class="hidden mb-10">
+
+        <!-- Summary bar -->
+        <div id="results-summary" class="flex flex-wrap items-center gap-3 mb-5 text-sm text-slate-500">
+            <!-- Injected by JS -->
+        </div>
+
+        <!-- Passed -->
+        <div class="mb-4">
+            <button onclick="toggleSection('passed')"
+                    class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
+                <span class="flex items-center gap-2 font-bold text-slate-900">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                    Passed — Score ≥ 75 &amp; 7+ Bullish Managers
+                    <span id="passed-count" class="text-sm font-normal text-slate-400"></span>
+                </span>
+                <svg id="passed-chevron" class="h-4 w-4 text-slate-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
-            </div>
-            <h2 class="text-xl font-bold text-slate-900 mb-2">No scan yet today</h2>
-            <p class="text-slate-500 mb-6 max-w-md mx-auto">
-                Click <strong>Run Today's Scan</strong> to screen {{ total_stocks }} stocks through all 10 investor frameworks.<br>
-                Come back daily — each run is saved so you can compare results over time.
-            </p>
-            <button onclick="startScan()" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full transition-colors">
-                Run Today's Scan
             </button>
+            <div id="passed-body" class="mt-2">
+                <div id="passed-empty" class="hidden stitch-card p-8 text-center text-slate-400 text-sm">
+                    None of today's 10 cleared the bar. Check back tomorrow — the draw is different every day.
+                </div>
+                <div class="stitch-card overflow-hidden hidden" id="passed-table-wrap">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left">Ticker</th>
+                                <th class="px-4 py-3 text-left">Company</th>
+                                <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
+                                <th class="px-4 py-3 text-center">Score</th>
+                                <th class="px-4 py-3 text-center">Signal</th>
+                                <th class="px-4 py-3 text-center">Managers</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passed-tbody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-    </main>
+        <!-- Did Not Pass -->
+        <div class="mb-4">
+            <button onclick="toggleSection('failed')"
+                    class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
+                <span class="flex items-center gap-2 font-bold text-slate-900">
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span>
+                    Did Not Pass
+                    <span id="failed-count" class="text-sm font-normal text-slate-400"></span>
+                </span>
+                <svg id="failed-chevron" class="h-4 w-4 text-slate-400 transition-transform rotate-[-90deg]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div id="failed-body" class="mt-2 hidden">
+                <div class="stitch-card overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left">Ticker</th>
+                                <th class="px-4 py-3 text-left">Company</th>
+                                <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
+                                <th class="px-4 py-3 text-center">Score</th>
+                                <th class="px-4 py-3 text-center">Signal</th>
+                                <th class="px-4 py-3 text-center">Managers</th>
+                            </tr>
+                        </thead>
+                        <tbody id="failed-tbody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <footer class="w-full py-6 mt-auto text-center text-slate-400 text-sm border-t border-slate-200 bg-white">
-        <p>Screening {{ total_stocks }} stocks across 10 investor frameworks. Not financial advice.</p>
-    </footer>
+    <!-- Past 20 daily scans -->
+    <div class="mt-8">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Scan Archive — Last 20 Days</h2>
+            <span id="history-status" class="text-xs text-slate-400"></span>
+        </div>
+        <div id="history-strip" class="flex gap-2 overflow-x-auto pb-2">
+            <div id="history-loading" class="flex gap-2 w-full">
+                <div class="stitch-card w-28 h-20 flex-shrink-0 animate-pulse bg-slate-50"></div>
+                <div class="stitch-card w-28 h-20 flex-shrink-0 animate-pulse bg-slate-50"></div>
+                <div class="stitch-card w-28 h-20 flex-shrink-0 animate-pulse bg-slate-50"></div>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        const TOTAL_BATCHES  = {{ total_batches }};
-        const CACHE_KEY      = 'investor_lens_scan_v2';
-        const CACHE_TTL_MS   = 6 * 60 * 60 * 1000; // 6 hours local cache
-        const PARALLEL_FETCH = 4;
+</main>
 
-        let isScanning       = false;
-        let activeHistoryId  = null; // which history card is highlighted
+<footer class="w-full py-6 mt-auto text-center text-slate-400 text-xs border-t border-slate-200 bg-white">
+    {{ daily_scan_size }} stocks drawn daily from a universe of {{ total_stocks }}. Not financial advice.
+</footer>
 
-        // ── Startup ────────────────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Load history from server
-            await loadHistory();
+<script>
+    const DAILY_SCAN_SIZE = {{ daily_scan_size }};
+    const CACHE_KEY       = 'il_daily_scan_v3';
 
-            // Show local cache if fresh
-            const cached = loadCache();
+    let todayTickers  = [];
+    let isScanning    = false;
+    let activeHistId  = null;
+
+    // ── Boot ───────────────────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', async () => {
+        // Set today's date label
+        const now = new Date();
+        document.getElementById('today-date-label').textContent =
+            now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        // Load history (non-blocking)
+        loadHistory();
+
+        // Fetch today's tickers
+        try {
+            const resp   = await fetch('/api/scan/daily-tickers');
+            const data   = await resp.json();
+            todayTickers = data.tickers || [];
+            renderTickerGrid(todayTickers, {});
+
+            // Check local cache for today's results
+            const cached = loadCache(data.date);
             if (cached) {
-                renderResults(cached.results, cached.scannedAt);
+                renderTickerGrid(todayTickers, cached.byTicker);
+                renderResults(cached.results, cached.scannedAt, true);
+            } else {
+                document.getElementById('scan-action').classList.remove('hidden');
             }
-            // else empty state stays visible
-        });
-
-        // ── Local cache ────────────────────────────────────────────────────
-        function loadCache() {
-            try {
-                const raw = localStorage.getItem(CACHE_KEY);
-                if (!raw) return null;
-                const data = JSON.parse(raw);
-                if (Date.now() - data.scannedAt > CACHE_TTL_MS) return null;
-                return data;
-            } catch { return null; }
+        } catch {
+            document.getElementById('ticker-grid').innerHTML =
+                '<p class="col-span-5 text-sm text-slate-400 text-center py-4">Could not load today\'s picks — please refresh.</p>';
         }
+    });
 
-        function saveLocalCache(results) {
-            try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ results, scannedAt: Date.now() }));
-            } catch {}
-        }
-
-        // ── History strip ──────────────────────────────────────────────────
-        async function loadHistory() {
-            try {
-                const resp = await fetch('/api/scan/history');
-                const data = await resp.json();
-                renderHistory(data.history || []);
-            } catch {
-                document.getElementById('history-loading').innerHTML =
-                    '<span class="text-xs text-slate-400 italic">Could not load history</span>';
-                document.getElementById('history-status').textContent = '';
+    // ── Ticker grid ────────────────────────────────────────────────────────
+    function renderTickerGrid(tickers, byTicker) {
+        document.getElementById('ticker-grid').innerHTML = tickers.map(t => {
+            const r = byTicker[t];
+            let cls = 'ticker-chip';
+            let right = '';
+            if (r) {
+                const passed = r.consensus >= 75 && r.bullish_count >= 7;
+                cls += passed ? ' done-pass' : ' done-fail';
+                const barColor = r.consensus >= 75 ? 'bg-emerald-500' : r.consensus >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+                right = `<span class="font-bold text-slate-700 text-sm">${r.consensus}</span>`;
             }
-        }
+            return `<div class="${cls}" id="chip-${t}">
+                <span class="font-bold text-slate-800 text-sm">${t}</span>
+                ${right}
+            </div>`;
+        }).join('');
+    }
 
-        function renderHistory(history) {
-            const strip = document.getElementById('history-strip');
+    function setChipScanning(ticker) {
+        const el = document.getElementById(`chip-${ticker}`);
+        if (el) el.className = 'ticker-chip scanning';
+    }
 
-            if (!history.length) {
-                strip.innerHTML = '<span class="text-xs text-slate-400 italic py-4">No saved scans yet — run your first scan!</span>';
-                document.getElementById('history-status').textContent = '';
-                return;
-            }
+    function setChipDone(ticker, consensus, passed) {
+        const el = document.getElementById(`chip-${ticker}`);
+        if (!el) return;
+        el.className = 'ticker-chip ' + (passed ? 'done-pass' : 'done-fail');
+        el.innerHTML = `<span class="font-bold text-slate-800 text-sm">${ticker}</span>
+                        <span class="font-bold text-slate-700 text-sm">${consensus}</span>`;
+    }
 
-            document.getElementById('history-status').textContent =
-                `${history.length} scan${history.length !== 1 ? 's' : ''} saved`;
+    // ── Scan ───────────────────────────────────────────────────────────────
+    async function startScan() {
+        if (isScanning || !todayTickers.length) return;
+        isScanning = true;
 
-            strip.innerHTML = history.map(item => {
-                const d        = new Date(item.scanned_at);
-                const today    = new Date();
-                const isToday  = d.toDateString() === today.toDateString();
-                const dateStr  = isToday ? 'Today' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                const timeStr  = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                const passedN  = item.passed_count || 0;
-                const scannedN = item.total_scanned || 0;
-                return `
-                <div id="hist-${item.id}"
-                     onclick="loadHistoryScan(${item.id})"
-                     class="history-card stitch-card flex-shrink-0 w-28 px-3 py-2.5 cursor-pointer">
-                    <div class="text-xs font-bold text-slate-700 mb-0.5">${dateStr}</div>
-                    <div class="text-[10px] text-slate-400 mb-1.5">${timeStr}</div>
-                    <div class="text-xs font-semibold ${passedN > 0 ? 'text-emerald-600' : 'text-slate-400'}">
-                        ${passedN} passed
-                    </div>
-                    <div class="text-[10px] text-slate-400">${scannedN} scanned</div>
-                </div>`;
-            }).join('');
-        }
+        document.getElementById('scan-action').classList.add('hidden');
+        document.getElementById('scan-progress').classList.remove('hidden');
 
-        async function loadHistoryScan(id) {
-            // Highlight the selected card
-            if (activeHistoryId) {
-                document.getElementById(`hist-${activeHistoryId}`)?.classList.remove('active');
-            }
-            activeHistoryId = id;
-            document.getElementById(`hist-${id}`)?.classList.add('active');
+        // Animate chips to scanning state
+        todayTickers.forEach(setChipScanning);
+        setProgress(0, 'Contacting market data…');
 
-            // Fetch full results
-            try {
-                const resp = await fetch(`/api/scan/history/${id}`);
-                if (!resp.ok) throw new Error('not found');
-                const data = await resp.json();
-                renderResults(data.results || [], new Date(data.scanned_at).getTime());
-                document.getElementById('scan-meta').textContent =
-                    `Historical scan — ${new Date(data.scanned_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`;
-            } catch {
-                alert('Could not load that scan — it may have expired.');
-            }
-        }
-
-        // ── Scan orchestration ─────────────────────────────────────────────
-        async function startScan() {
-            if (isScanning) return;
-            isScanning = true;
-
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('results-section').classList.add('hidden');
-            document.getElementById('progress-section').classList.remove('hidden');
-            document.getElementById('btn-scan').disabled = true;
-            document.getElementById('btn-scan').textContent = 'Scanning…';
-
-            const allResults = [];
-            let batchesDone  = 0;
-
-            for (let start = 0; start < TOTAL_BATCHES; start += PARALLEL_FETCH) {
-                const end     = Math.min(start + PARALLEL_FETCH, TOTAL_BATCHES);
-                const indices = Array.from({ length: end - start }, (_, i) => start + i);
-
-                setProgress(batchesDone, TOTAL_BATCHES);
-
-                const settled = await Promise.allSettled(
-                    indices.map(n =>
-                        fetch(`/api/scan/batch?n=${n}`)
-                            .then(r => r.json())
-                            .catch(() => null)
-                    )
-                );
-
-                settled.forEach(outcome => {
-                    if (outcome.status === 'fulfilled' && outcome.value?.results) {
-                        allResults.push(...outcome.value.results);
-                    }
-                });
-
-                batchesDone += indices.length;
-                setProgress(batchesDone, TOTAL_BATCHES);
-
-                if (end < TOTAL_BATCHES) await sleep(800);
-            }
-
-            await sleep(300);
-
-            // Save to local cache
-            saveLocalCache(allResults);
-
-            // Auto-save to server (fire and forget)
-            fetch('/api/scan/save', {
+        let results = [];
+        try {
+            // Fire all 10 in one call
+            const resp = await fetch('/api/scan/custom', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ results: allResults }),
-            }).then(() => loadHistory()).catch(() => {});
+                body: JSON.stringify({ tickers: todayTickers }),
+            });
 
-            renderResults(allResults, Date.now());
+            setProgress(60, 'Scoring…');
+            const data = await resp.json();
+            results = data.results || [];
 
-            document.getElementById('progress-section').classList.add('hidden');
-            document.getElementById('btn-scan').disabled = false;
-            document.getElementById('btn-scan').textContent = 'Re-scan';
-            isScanning = false;
-        }
-
-        function setProgress(done, total) {
-            const pct = Math.round((done / total) * 100);
-            document.getElementById('progress-bar').style.width = pct + '%';
-            document.getElementById('progress-pct').textContent  = pct + '%';
-            document.getElementById('progress-label').textContent =
-                done < total ? `Scanning… (${done} of ${total} batches complete)` : 'Building results…';
-        }
-
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-        // ── Collapsible sections ───────────────────────────────────────────
-        function toggleSection(id) {
-            const body    = document.getElementById(id + '-body');
-            const chevron = document.getElementById(id + '-chevron');
-            const hidden  = body.classList.toggle('hidden');
-            chevron.style.transform = hidden ? 'rotate(-90deg)' : 'rotate(0deg)';
-        }
-
-        // ── Render results ─────────────────────────────────────────────────
-        function renderResults(results, scannedAt) {
-            results.sort((a, b) => b.consensus - a.consensus);
-
-            const passed = results.filter(r => r.consensus >= 75 && r.bullish_count >= 7);
-            const failed = results.filter(r => !(r.consensus >= 75 && r.bullish_count >= 7));
-
-            const age  = Math.round((Date.now() - scannedAt) / 60000);
-            const when = age < 2 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
-            document.getElementById('scan-meta').textContent =
-                `${results.length} stocks scanned • ${when} • ${passed.length} passed`;
-
-            // Passed
-            document.getElementById('passed-count').textContent = `(${passed.length})`;
-            if (passed.length === 0) {
-                document.getElementById('passed-empty').classList.remove('hidden');
-                document.getElementById('passed-table-wrap').classList.add('hidden');
-            } else {
-                document.getElementById('passed-empty').classList.add('hidden');
-                document.getElementById('passed-table-wrap').classList.remove('hidden');
-                document.getElementById('passed-tbody').innerHTML = passed.map(rowHtml).join('');
+            // Animate chips done one by one
+            const byTicker = Object.fromEntries(results.map(r => [r.ticker, r]));
+            let done = 0;
+            for (const t of todayTickers) {
+                const r = byTicker[t];
+                if (r) setChipDone(t, r.consensus, r.consensus >= 75 && r.bullish_count >= 7);
+                done++;
+                setProgress(60 + Math.round((done / todayTickers.length) * 40), 'Scoring…');
+                await sleep(80);
             }
-
-            // Did Not Pass
-            document.getElementById('failed-count').textContent = `(${failed.length})`;
-            document.getElementById('failed-tbody').innerHTML = failed.map(rowHtml).join('');
-
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('results-section').classList.remove('hidden');
+        } catch (e) {
+            console.error('Scan failed:', e);
+            document.getElementById('scan-action').classList.remove('hidden');
+            document.getElementById('scan-progress').classList.add('hidden');
+            isScanning = false;
+            return;
         }
 
-        function rowHtml(r) {
-            const signalBg = signalColour(r.signal_label);
-            const barColor = r.consensus >= 75 ? 'bg-emerald-500'
-                           : r.consensus >= 50 ? 'bg-yellow-400'
-                           : 'bg-red-400';
-            return `
-            <tr class="result-row" onclick="window.location='/analyze/${r.ticker}'">
-                <td class="px-4 py-3 font-bold text-slate-900">${r.ticker}</td>
-                <td class="px-4 py-3 text-slate-600 max-w-[160px] truncate">${r.name || r.ticker}</td>
-                <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell">${r.sector || '—'}</td>
-                <td class="px-4 py-3">
-                    <div class="flex items-center gap-2 justify-center">
-                        <div class="w-16 bg-slate-100 rounded-full h-1.5 hidden sm:block">
-                            <div class="h-1.5 rounded-full ${barColor}" style="width:${r.consensus}%"></div>
-                        </div>
-                        <span class="font-bold text-slate-800 w-8 text-center">${r.consensus}</span>
+        setProgress(100, 'Complete!');
+        await sleep(400);
+        document.getElementById('scan-progress').classList.add('hidden');
+
+        const scannedAt = Date.now();
+
+        // Cache locally keyed to today's date string
+        const dateStr = new Date().toISOString().slice(0, 10);
+        saveCache(dateStr, results);
+
+        // Auto-save to server
+        fetch('/api/scan/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results }),
+        }).then(() => loadHistory()).catch(() => {});
+
+        renderResults(results, scannedAt, false);
+        isScanning = false;
+    }
+
+    function setProgress(pct, label) {
+        document.getElementById('progress-bar').style.width = pct + '%';
+        document.getElementById('progress-pct').textContent  = pct + '%';
+        document.getElementById('progress-label').textContent = label;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── Render results ─────────────────────────────────────────────────────
+    function renderResults(results, scannedAt, fromCache) {
+        results.sort((a, b) => b.consensus - a.consensus);
+        const passed = results.filter(r => r.consensus >= 75 && r.bullish_count >= 7);
+        const failed = results.filter(r => !(r.consensus >= 75 && r.bullish_count >= 7));
+
+        const age  = Math.round((Date.now() - scannedAt) / 60000);
+        const when = age < 2 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
+
+        document.getElementById('results-summary').innerHTML = `
+            <span class="stitch-card px-3 py-1 text-xs font-semibold text-emerald-700 border-emerald-200 bg-emerald-50">
+                ${passed.length} passed
+            </span>
+            <span class="stitch-card px-3 py-1 text-xs text-slate-500">
+                ${failed.length} did not pass
+            </span>
+            <span class="text-xs text-slate-400 ml-auto">Scored ${when}${fromCache ? ' · cached' : ''}</span>`;
+
+        // Passed
+        document.getElementById('passed-count').textContent = `(${passed.length})`;
+        if (passed.length === 0) {
+            document.getElementById('passed-empty').classList.remove('hidden');
+            document.getElementById('passed-table-wrap').classList.add('hidden');
+        } else {
+            document.getElementById('passed-empty').classList.add('hidden');
+            document.getElementById('passed-table-wrap').classList.remove('hidden');
+            document.getElementById('passed-tbody').innerHTML = passed.map(rowHtml).join('');
+        }
+
+        // Failed
+        document.getElementById('failed-count').textContent = `(${failed.length})`;
+        document.getElementById('failed-tbody').innerHTML = failed.map(rowHtml).join('');
+
+        document.getElementById('results-section').classList.remove('hidden');
+    }
+
+    function rowHtml(r) {
+        const sigBg    = signalColour(r.signal_label);
+        const barColor = r.consensus >= 75 ? 'bg-emerald-500' : r.consensus >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+        return `<tr class="result-row" onclick="window.location='/analyze/${r.ticker}'">
+            <td class="px-4 py-3 font-bold text-slate-900">${r.ticker}</td>
+            <td class="px-4 py-3 text-slate-600 max-w-[160px] truncate">${r.name || r.ticker}</td>
+            <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell">${r.sector || '—'}</td>
+            <td class="px-4 py-3">
+                <div class="flex items-center gap-2 justify-center">
+                    <div class="w-16 bg-slate-100 rounded-full h-1.5 hidden sm:block">
+                        <div class="h-1.5 rounded-full ${barColor}" style="width:${r.consensus}%"></div>
                     </div>
-                </td>
-                <td class="px-4 py-3 text-center">
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold text-white ${signalBg}">
-                        ${r.signal_label}
-                    </span>
-                </td>
-                <td class="px-4 py-3 text-center">
-                    <span class="font-semibold ${r.bullish_count >= 7 ? 'text-emerald-600' : 'text-slate-500'}">
-                        ${r.bullish_count}/10
-                    </span>
-                    <span class="text-slate-300 text-xs ml-0.5">bullish</span>
-                </td>
-            </tr>`;
-        }
+                    <span class="font-bold text-slate-800 w-8 text-center">${r.consensus}</span>
+                </div>
+            </td>
+            <td class="px-4 py-3 text-center">
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold text-white ${sigBg}">${r.signal_label}</span>
+            </td>
+            <td class="px-4 py-3 text-center">
+                <span class="font-semibold ${r.bullish_count >= 7 ? 'text-emerald-600' : 'text-slate-500'}">${r.bullish_count}/10</span>
+                <span class="text-slate-300 text-xs ml-0.5">bullish</span>
+            </td>
+        </tr>`;
+    }
 
-        function signalColour(label) {
-            return label === 'Strong Buy' ? 'bg-emerald-600'
-                 : label === 'Buy'        ? 'bg-green-500'
-                 : label === 'Hold'       ? 'bg-yellow-500'
-                 : label === 'Sell'       ? 'bg-orange-500'
-                 : 'bg-red-500';
+    function signalColour(l) {
+        return l === 'Strong Buy' ? 'bg-emerald-600' : l === 'Buy' ? 'bg-green-500'
+             : l === 'Hold'       ? 'bg-yellow-500' : l === 'Sell' ? 'bg-orange-500' : 'bg-red-500';
+    }
+
+    // ── Collapsible sections ───────────────────────────────────────────────
+    function toggleSection(id) {
+        const body    = document.getElementById(id + '-body');
+        const chevron = document.getElementById(id + '-chevron');
+        const hidden  = body.classList.toggle('hidden');
+        chevron.style.transform = hidden ? 'rotate(-90deg)' : 'rotate(0deg)';
+    }
+
+    // ── Local cache (keyed by date) ────────────────────────────────────────
+    function loadCache(dateStr) {
+        try {
+            const raw = localStorage.getItem(CACHE_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (data.date !== dateStr) return null;
+            return data;
+        } catch { return null; }
+    }
+
+    function saveCache(dateStr, results) {
+        try {
+            const byTicker = Object.fromEntries(results.map(r => [r.ticker, r]));
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                date: dateStr, results, byTicker, scannedAt: Date.now(),
+            }));
+        } catch {}
+    }
+
+    // ── History strip ──────────────────────────────────────────────────────
+    async function loadHistory() {
+        try {
+            const resp    = await fetch('/api/scan/history');
+            const data    = await resp.json();
+            const history = data.history || [];
+            document.getElementById('history-status').textContent =
+                history.length ? `${history.length} saved` : '';
+            renderHistory(history);
+        } catch {
+            document.getElementById('history-loading').innerHTML =
+                '<span class="text-xs text-slate-400 italic py-4">History unavailable</span>';
         }
-    </script>
+    }
+
+    function renderHistory(history) {
+        const strip = document.getElementById('history-strip');
+        if (!history.length) {
+            strip.innerHTML = '<span class="text-xs text-slate-400 italic py-4">No scans saved yet — run your first scan above.</span>';
+            return;
+        }
+        strip.innerHTML = history.map(item => {
+            const d       = new Date(item.scanned_at);
+            const today   = new Date();
+            const isToday = d.toDateString() === today.toDateString();
+            const label   = isToday ? 'Today' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+            const time    = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            const passed  = item.passed_count || 0;
+            const scanned = item.total_scanned || 0;
+            return `<div id="hist-${item.id}"
+                        onclick="loadHistoryScan(${item.id})"
+                        class="history-card stitch-card flex-shrink-0 w-28 px-3 py-2.5 cursor-pointer">
+                <div class="text-xs font-bold text-slate-700">${label}</div>
+                <div class="text-[10px] text-slate-400 mb-1.5">${time}</div>
+                <div class="text-xs font-semibold ${passed > 0 ? 'text-emerald-600' : 'text-slate-400'}">${passed} passed</div>
+                <div class="text-[10px] text-slate-400">${scanned} scored</div>
+            </div>`;
+        }).join('');
+    }
+
+    async function loadHistoryScan(id) {
+        if (activeHistId) document.getElementById(`hist-${activeHistId}`)?.classList.remove('active');
+        activeHistId = id;
+        document.getElementById(`hist-${id}`)?.classList.add('active');
+        try {
+            const resp = await fetch(`/api/scan/history/${id}`);
+            if (!resp.ok) throw new Error();
+            const data = await resp.json();
+            const results = data.results || [];
+            const tickers = results.map(r => r.ticker);
+            renderTickerGrid(tickers, Object.fromEntries(results.map(r => [r.ticker, r])));
+            renderResults(results, new Date(data.scanned_at).getTime(), true);
+            document.getElementById('scan-action').classList.add('hidden');
+        } catch { alert('Could not load that scan.'); }
+    }
+</script>
 </body>
 </html>

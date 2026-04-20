@@ -2,9 +2,15 @@
 Stock universe and batch scan logic for the Top Picks scanner.
 Each batch_scan() call handles a slice of UNIVERSE — tickers within each
 batch are fetched in parallel to keep wall-clock time within Vercel's timeout.
+
+Daily scan: get_daily_tickers() picks DAILY_SCAN_SIZE tickers seeded by
+today's date so every visitor sees the same 10 stocks on a given day.
+scan_tickers() runs them in parallel and returns scored results.
 """
 
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date as _date
 
 from app.analyzer import (
     get_safe, _get_stock_info_fast, _make_session, _get_crumb,
@@ -14,65 +20,162 @@ from app.analyzer import (
     MANAGER_WEIGHTS, _compute_signal,
 )
 
+DAILY_SCAN_SIZE = 10
+
 UNIVERSE = [
-    # === TECHNOLOGY (52) ===
-    # Mega-cap
+    # === TECHNOLOGY (72) ===
+    # Mega-cap platforms
     "AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA", "AMD",
-    # Software / SaaS
+    # Enterprise software / SaaS
     "ADBE", "CRM", "ORCL", "NOW", "INTU", "SNPS", "CDNS", "ANSS",
-    "CTSH", "ACN", "IBM", "DELL",
+    "CTSH", "ACN", "IBM", "DELL", "HPE", "HPQ",
+    "VEEV", "HUBS", "PAYC", "PCTY", "TWLO", "ZI", "NTNX", "MDB",
+    "CFLT", "GTLB", "BILL", "ESTC", "DOMO",
     # Semiconductors
     "INTC", "QCOM", "AVGO", "TXN", "MU", "AMAT", "LRCX", "KLAC",
-    "MRVL", "ON", "TER", "ENTG",
+    "MRVL", "ON", "TER", "ENTG", "MCHP", "SWKS", "QRVO", "MPWR",
     # Cloud / Cybersecurity / AI
     "PLTR", "SNOW", "CRWD", "PANW", "FTNT", "NET", "DDOG", "ZS",
-    "OKTA", "HUBS", "PAYC", "VEEV",
-    # Fintech payments
-    "PYPL", "FISV", "FI", "GPN",
-    # === FINANCIALS (33) ===
-    "JPM", "V", "MA", "BAC", "GS", "MS", "WFC", "AXP", "BLK", "SCHW",
-    "C", "COF", "USB", "PNC", "TFC", "SPGI", "MCO", "ICE", "CME",
-    "BX", "KKR", "APO", "ARES",
-    "MTB", "RF", "HBAN", "KEY", "CFG", "SYF", "DFS",
-    "CB", "PGR", "MET",
-    # === HEALTHCARE (30) ===
+    "OKTA", "CSCO",
+    # Consumer Internet
+    "PINS", "SNAP", "EBAY", "ETSY", "GDDY", "TRIP", "YELP",
+    # Fintech / Payments
+    "PYPL", "FISV", "FI", "GPN", "WEX", "EPAM",
+    # === FINANCIALS (52) ===
+    # Banks — large
+    "JPM", "BAC", "WFC", "C", "USB", "PNC", "TFC", "MTB",
+    "RF", "HBAN", "KEY", "CFG", "ZION", "CMA", "WAL",
+    # Capital markets
+    "GS", "MS", "SCHW", "AXP", "BLK", "V", "MA",
+    "SPGI", "MCO", "ICE", "CME", "BX", "KKR", "APO", "ARES",
+    "TROW", "BEN", "IVZ", "NTRS", "STT", "BK", "AMP",
+    # Insurance
+    "CB", "PGR", "MET", "AIG", "AFL", "ALL", "HIG", "TRV",
+    "PRU", "EQH", "MKL", "WRB", "L",
+    # Fintech
+    "SYF", "DFS", "COF", "PYPL", "SQ",
+    # === HEALTHCARE (45) ===
+    # Large pharma / biotech
     "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "TMO", "ABT", "AMGN",
-    "GILD", "REGN", "VRTX", "BMY", "CVS", "CI", "ELV", "ISRG", "MDT",
-    "DHR", "BSX", "SYK", "ZBH", "BDX", "HCA", "HUM", "MOH",
-    "IDXX", "A", "IQV", "RMD",
-    # === CONSUMER STAPLES (15) ===
+    "GILD", "REGN", "VRTX", "BMY", "BIIB", "MRNA", "ALNY", "NBIX",
+    "EXAS", "INCY", "JAZZ", "VTRS",
+    # Med devices
+    "ISRG", "MDT", "DHR", "BSX", "SYK", "ZBH", "BDX", "EW",
+    "ALGN", "HOLX", "PODD", "RMD", "IDXX", "MTD", "WAT",
+    # Health services / PBMs
+    "CVS", "CI", "ELV", "HCA", "HUM", "MOH", "CNC",
+    "A", "IQV", "NTRA", "TDOC",
+    # === CONSUMER STAPLES (22) ===
     "WMT", "COST", "PG", "KO", "PEP", "MDLZ", "CL", "MKC", "GIS",
-    "CHD", "STZ", "KHC", "CAG", "SJM", "HSY",
-    # === CONSUMER DISCRETIONARY (22) ===
-    "MCD", "HD", "NKE", "SBUX", "TGT", "LOW", "TJX", "ROST", "ABNB",
-    "BKNG", "CMG", "HLT", "MAR", "YUM", "DRI", "POOL", "ULTA",
-    "F", "GM", "TSCO", "EXPE", "LVS",
-    # === ENERGY (15) ===
+    "CHD", "STZ", "KHC", "CAG", "SJM", "HSY", "HRL", "CPB",
+    "EL", "CLX", "MO", "PM", "ADM",
+    # === CONSUMER DISCRETIONARY (35) ===
+    # Restaurants / hospitality
+    "MCD", "SBUX", "CMG", "YUM", "DRI", "HLT", "MAR", "WYNN", "MGM", "LVS",
+    # Retail / e-commerce
+    "HD", "LOW", "TGT", "TJX", "ROST", "TSCO", "ULTA", "BBY",
+    "AZO", "ORLY", "GPC",
+    # Autos
+    "NKE", "F", "GM", "APTV", "LEA",
+    # Travel / leisure
+    "ABNB", "BKNG", "EXPE", "POOL", "RCL", "CCL", "NCLH",
+    # Apparel / luxury
+    "LULU", "RH", "WSM", "W",
+    # === ENERGY (25) ===
     "XOM", "CVX", "COP", "EOG", "SLB", "MPC", "VLO", "OXY", "PSX",
     "DVN", "HAL", "BKR", "FANG", "APA", "MRO",
-    # === INDUSTRIALS (28) ===
-    "CAT", "HON", "RTX", "DE", "BA", "GE", "LMT", "NOC", "GD", "UNP",
-    "UPS", "FDX", "CTAS", "ETN", "EMR", "PH", "MMM", "ITW", "ROK",
-    "DOV", "XYL", "OTIS", "CARR", "TT", "IR", "FAST", "RSG", "WM",
-    # === COMMUNICATION & MEDIA (12) ===
-    "NFLX", "DIS", "T", "VZ", "TMUS", "CHTR", "CMCSA",
-    "PARA", "OMC", "IPG", "FOXA", "WBD",
-    # === MATERIALS (10) ===
+    "KMI", "WMB", "OKE", "TRGP", "HES",
+    "PR", "SM", "MTDR", "HP", "NOV",
+    # === INDUSTRIALS (38) ===
+    # Defence / aerospace
+    "LMT", "RTX", "NOC", "GD", "BA", "TDG", "HEICO",
+    # Diversified / machinery
+    "HON", "GE", "CAT", "DE", "ETN", "EMR", "PH", "MMM", "ITW",
+    "ROK", "DOV", "CARR", "OTIS", "TT", "IR", "FAST",
+    # Transport / logistics
+    "UNP", "NSC", "CSX", "UPS", "FDX", "PCAR", "CPRT",
+    "DAL", "UAL", "LUV", "AAL",
+    # Waste / services
+    "RSG", "WM", "CTAS", "VRSK", "BAH",
+    # === COMMUNICATION & MEDIA (18) ===
+    "NFLX", "DIS", "T", "VZ", "TMUS", "CHTR", "CMCSA", "WBD",
+    "PARA", "FOXA", "OMC", "IPG",
+    "SNAP", "MTCH", "LYV", "TTWO", "EA",
+    "SPOT",
+    # === MATERIALS (18) ===
     "LIN", "APD", "SHW", "ECL", "FCX", "NEM", "ALB", "CF", "MOS", "FMC",
-    # === REITs (12) ===
+    "PPG", "RPM", "IFF", "MLM", "VMC",
+    "BALL", "PKG", "IP",
+    # === REITs (20) ===
     "PLD", "AMT", "EQIX", "CCI", "SPG", "O", "WELL", "PSA", "AVB", "EQR",
-    "VICI", "WPC",
-    # === UTILITIES (10) ===
+    "VICI", "WPC", "ARE", "BXP", "KIM", "REG", "NNN",
+    "EXR", "CUBE", "REXR",
+    # === UTILITIES (18) ===
     "NEE", "DUK", "SO", "D", "AEP", "EXC", "XEL", "PCG", "AWK", "ES",
-    # === GROWTH / FINTECH / INTERNATIONAL (18) ===
-    "UBER", "COIN", "SOFI", "SQ", "AFRM",
-    "SHOP", "MELI", "SE", "NU", "DKNG",
-    "HOOD", "DASH", "LYFT", "RBLX", "U",
-    "TSM", "ASML", "SAP",
-]  # 257 total
+    "WEC", "CMS", "LNT", "NI", "ATO", "SRE", "ETR", "PPL",
+    # === GROWTH / FINTECH / INTERNATIONAL (42) ===
+    # US growth / fintech
+    "UBER", "COIN", "SOFI", "AFRM", "HOOD", "DASH", "LYFT",
+    "DKNG", "RBLX", "U", "PTON", "CHWY",
+    # Global e-commerce / platforms
+    "SHOP", "MELI", "SE", "NU",
+    # International megacaps (ADRs)
+    "TSM", "ASML", "SAP", "NVO", "INFY",
+    "BABA", "JD", "PDD", "BIDU",
+    "NIO", "XPEV", "LI",
+    "SONY", "TM", "HMC",
+    "RACE", "LVMUY", "HESAY",
+    # Misc / thematic
+    "SQ", "HOOD", "AFRM",
+    "SMCI", "ARM", "IONQ",
+    "MSTR", "RIOT", "MARA",
+]
+
+# Deduplicate while preserving order (some tickers appear twice in source)
+_seen: set = set()
+_deduped: list = []
+for _t in UNIVERSE:
+    if _t not in _seen:
+        _seen.add(_t)
+        _deduped.append(_t)
+UNIVERSE = _deduped
 
 BATCH_SIZE = 5
 TOTAL_BATCHES = (len(UNIVERSE) + BATCH_SIZE - 1) // BATCH_SIZE
+
+
+# ── Daily scan helpers ──────────────────────────────────────────────────────
+
+def get_daily_tickers(n: int = DAILY_SCAN_SIZE, for_date: "_date | None" = None) -> list:
+    """
+    Return n tickers seeded by today's date — same picks for every visitor
+    on the same calendar day, fresh selection the next day.
+    """
+    d = for_date or _date.today()
+    seed = int(d.strftime("%Y%m%d"))
+    rng = random.Random(seed)
+    picks = list(UNIVERSE)
+    rng.shuffle(picks)
+    return picks[:n]
+
+
+def scan_tickers(tickers: list) -> list:
+    """
+    Scan a specific list of tickers in parallel using one shared session + crumb.
+    Returns scored results, silently skipping any that fail.
+    """
+    session = _make_session()
+    crumb   = _get_crumb(session)
+    results = []
+    with ThreadPoolExecutor(max_workers=min(len(tickers), 10)) as executor:
+        futures = {executor.submit(_scan_one, sym, session, crumb): sym for sym in tickers}
+        for future in as_completed(futures):
+            result = future.result()
+            if result is not None:
+                results.append(result)
+    order = {sym: i for i, sym in enumerate(tickers)}
+    results.sort(key=lambda r: order.get(r["ticker"], 999))
+    return results
 
 
 def _scan_one(sym: str, session=None, crumb=None) -> dict | None:
