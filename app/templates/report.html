@@ -156,11 +156,14 @@
 
     <!-- ── Price chart ── -->
     <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
             <div style="font-size:15px;font-weight:700;">Price History</div>
-            <div style="display:flex;gap:4px;background:#F3F4F6;border-radius:8px;padding:3px;">
-                <button onclick="updateChart(180)" id="btn-6m" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;">6M</button>
-                <button onclick="updateChart(365)" id="btn-1y" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1);color:var(--text);transition:all .15s;">1Y</button>
+            <div style="display:flex;gap:3px;background:#F3F4F6;border-radius:8px;padding:3px;">
+                <button onclick="updateChart(21)"  id="btn-1m"  class="chart-btn" style="padding:4px 9px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;">1M</button>
+                <button onclick="updateChart(63)"  id="btn-3m"  class="chart-btn" style="padding:4px 9px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;">3M</button>
+                <button onclick="updateChart(126)" id="btn-6m"  class="chart-btn" style="padding:4px 9px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;">6M</button>
+                <button onclick="updateChart(252)" id="btn-1y"  class="chart-btn" style="padding:4px 9px;border-radius:6px;font-size:12px;font-weight:600;color:var(--text);background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1);transition:all .15s;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">1Y</button>
+                <button onclick="updateChart(0)"   id="btn-5y"  class="chart-btn" style="padding:4px 9px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;">5Y</button>
             </div>
         </div>
         <div class="chart-wrap" style="position:relative;height:200px;">
@@ -238,64 +241,95 @@
 </footer>
 
 {% if not result.error %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 let myChart = null;
 let chartData = { dates: [], prices: [] };
+let activePeriod = 252;
+
+// ── Trading-day counts for each button ───────────────────────────────────────
+const PERIODS = { 'btn-1m': 21, 'btn-3m': 63, 'btn-6m': 126, 'btn-1y': 252, 'btn-5y': 0 };
 
 async function fetchChartData() {
     try {
         const r = await fetch('/api/chart/{{ result.ticker }}');
-        chartData = await r.json();
-        if (chartData.dates && chartData.dates.length) updateChart(365);
-    } catch(e) {}
+        const data = await r.json();
+        if (data.error || !data.dates || !data.dates.length) return;
+        chartData = data;
+        updateChart(252); // default: 1Y
+    } catch(e) { console.warn('Chart fetch failed', e); }
 }
 
-function updateChart(days) {
-    const active = 'padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1);color:var(--text);transition:all .15s;';
-    const inactive = 'padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;';
-    document.getElementById('btn-6m').style.cssText = days === 180 ? active : inactive;
-    document.getElementById('btn-1y').style.cssText = days === 365 ? active : inactive;
+function updateChart(tradingDays) {
+    activePeriod = tradingDays;
     if (!chartData.dates || !chartData.dates.length) return;
-    const sliceFrom = days === 180 ? Math.floor(chartData.dates.length / 2) : 0;
-    const dates  = chartData.dates.slice(sliceFrom);
-    const prices = chartData.prices.slice(sliceFrom);
+
+    // Slice from end: 0 = all data (5Y)
+    const dates  = tradingDays > 0 ? chartData.dates.slice(-tradingDays)  : chartData.dates;
+    const prices = tradingDays > 0 ? chartData.prices.slice(-tradingDays) : chartData.prices;
+
+    // Update button styles
+    document.querySelectorAll('.chart-btn').forEach(btn => {
+        const btnDays = PERIODS[btn.id];
+        const isActive = btnDays === tradingDays;
+        btn.style.fontWeight = isActive ? '600' : '500';
+        btn.style.color = isActive ? 'var(--text)' : 'var(--text2)';
+        btn.style.background = isActive ? 'var(--surface)' : 'none';
+        btn.style.boxShadow = isActive ? '0 1px 3px rgba(0,0,0,.1)' : 'none';
+    });
+
     const ctx = document.getElementById('priceChart').getContext('2d');
     if (myChart) myChart.destroy();
+
     const isPos = prices[prices.length - 1] >= prices[0];
-    const col = isPos ? '#00C805' : '#FF3B30';
+    const col   = isPos ? '#00C805' : '#FF3B30';
+    const colBg = isPos ? 'rgba(0,200,5,0.07)' : 'rgba(255,59,48,0.07)';
+
     myChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: dates,
-            datasets: [{ label: 'Price', data: prices, borderColor: col, backgroundColor: isPos ? 'rgba(0,200,5,0.07)' : 'rgba(255,59,48,0.07)', borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.1 }]
+            datasets: [{ data: prices, borderColor: col, backgroundColor: colBg,
+                borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.1 }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, callbacks: { label: c => '$' + c.parsed.y.toFixed(2) } } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: 'index', intersect: false,
+                    callbacks: { label: c => '$' + c.parsed.y.toFixed(2) } }
+            },
             scales: {
-                x: { display: true, grid: { display: false }, ticks: { maxTicksLimit: 6, color: '#9CA3AF', font: { family: 'DM Sans' } } },
-                y: { display: true, position: 'right', grid: { color: '#F3F4F6' }, ticks: { color: '#9CA3AF', font: { family: 'DM Sans' } } }
+                x: { display: true, grid: { display: false },
+                    ticks: { maxTicksLimit: 6, color: '#9CA3AF', font: { size: 11 } } },
+                y: { display: true, position: 'right', grid: { color: '#F3F4F6' },
+                    ticks: { color: '#9CA3AF', font: { size: 11 },
+                        callback: v => '$' + v.toFixed(0) } }
             },
             interaction: { mode: 'nearest', axis: 'x', intersect: false }
         }
     });
 }
 
-// Animate score bars on load
-window.addEventListener('DOMContentLoaded', () => {
+// ── Init — works whether DOMContentLoaded already fired or not ────────────────
+function init() {
     fetchChartData();
-    // Composite bar
     setTimeout(() => {
-        document.getElementById('composite-bar').style.width = '{{ result.consensus_score }}%';
-    }, 100);
-    // Investor bars
+        const bar = document.getElementById('composite-bar');
+        if (bar) bar.style.width = '{{ result.consensus_score }}%';
+    }, 80);
     setTimeout(() => {
         document.querySelectorAll('.score-fill[data-score]').forEach(el => {
             el.style.width = el.dataset.score + '%';
         });
-    }, 200);
-});
+    }, 160);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init(); // DOM already ready (scripts at bottom of body)
+}
 </script>
 {% endif %}
 

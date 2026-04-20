@@ -133,7 +133,7 @@ def _fetch_chart_direct(ticker: str):
     response = requests.get(
         url,
         headers=_BROWSER_HEADERS,
-        params={"range": "1y", "interval": "1d", "includePrePost": "false"},
+        params={"range": "5y", "interval": "1d", "includePrePost": "false"},
         timeout=6,
     )
     data = response.json()
@@ -332,7 +332,7 @@ async def api_chart(ticker: str):
 
     try:
         stock = yf.Ticker(ticker, session=_make_session())
-        hist = stock.history(period="1y")
+        hist = stock.history(period="5y")
         if hist.empty:
             chart = _fetch_chart_direct(ticker)
         else:
