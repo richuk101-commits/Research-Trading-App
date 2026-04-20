@@ -3,329 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ result.ticker if result.ticker else 'Error' }} - Investor Lens</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{{ result.ticker if result and result.ticker else 'Analysis' }} — Investor Lens</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
-        .stitch-card {
-            background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #F4F5F7; --surface: #FFFFFF; --text: #0C0D0F; --text2: #6B7280; --text3: #9CA3AF;
+            --border: #E8E9EC; --green: #00C805; --green-bg: #E8FDE9; --red: #FF3B30; --red-bg: #FFF0EF;
+            --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+            --shadow-lg: 0 4px 24px rgba(0,0,0,.10);
         }
+        html, body { min-height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { text-decoration: none; color: inherit; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .score-fill { transition: width .9s cubic-bezier(.22,1,.36,1); }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+<body>
 
-    <nav class="w-full max-w-5xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center border-b border-slate-200 bg-white">
-        <a href="/" class="flex items-center gap-2 group">
-            <svg class="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+{% set MANAGER_META = {
+  "Buffett":       {"color": "#F59E0B", "bg": "#FEF3C7", "full": "Warren Buffett",       "initial": "WB"},
+  "Lynch":         {"color": "#14B8A6", "bg": "#CCFBF1", "full": "Peter Lynch",           "initial": "PL"},
+  "Graham":        {"color": "#3B82F6", "bg": "#DBEAFE", "full": "Ben Graham",             "initial": "BG"},
+  "Marks":         {"color": "#64748B", "bg": "#F1F5F9", "full": "Howard Marks",           "initial": "HM"},
+  "Dalio":         {"color": "#6366F1", "bg": "#EEF2FF", "full": "Ray Dalio",              "initial": "RD"},
+  "Burry":         {"color": "#EF4444", "bg": "#FEE2E2", "full": "Michael Burry",          "initial": "MB"},
+  "Fisher":        {"color": "#EC4899", "bg": "#FCE7F3", "full": "Phil Fisher",            "initial": "PF"},
+  "Wood":          {"color": "#8B5CF6", "bg": "#EDE9FE", "full": "Cathie Wood",            "initial": "CW"},
+  "Greenblatt":    {"color": "#F97316", "bg": "#FFEDD5", "full": "Joel Greenblatt",        "initial": "JG"},
+  "Druckenmiller": {"color": "#10B981", "bg": "#D1FAE5", "full": "Stan Druckenmiller",     "initial": "SD"}
+} %}
+
+<!-- Nav -->
+<nav style="position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;">
+    <a href="/" style="display:flex;align-items:center;gap:8px;">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:#fff;font-size:13px;font-weight:700;letter-spacing:-0.5px;">IL</span>
+        </span>
+        <span style="font-weight:700;font-size:16px;letter-spacing:-0.4px;">Investor Lens</span>
+    </a>
+    <a href="/scanner"
+       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;"
+       onmouseover="this.style.background='var(--text)';this.style.color='#fff';"
+       onmouseout="this.style.background='transparent';this.style.color='var(--text2)';">
+        Top Picks
+    </a>
+</nav>
+
+<main style="max-width:760px;margin:0 auto;padding:0 20px 60px;">
+
+    <!-- Back -->
+    <a href="/" style="display:inline-flex;align-items:center;gap:6px;padding:16px 0;font-size:14px;color:var(--text2);font-weight:500;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Search
+    </a>
+
+    {% if result.error %}
+    <!-- Error state -->
+    <div style="background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:48px 24px;text-align:center;max-width:480px;margin:0 auto;">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <span class="font-medium text-slate-500 group-hover:text-slate-900 transition-colors">Search</span>
-        </a>
-        <div class="flex items-center gap-2">
-            <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span class="font-bold text-lg tracking-tight">Investor Lens</span>
         </div>
-    </nav>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Analysis Failed</h2>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:24px;">{{ result.error }}</p>
+        <a href="/" style="display:inline-block;padding:12px 24px;background:var(--text);color:#fff;border-radius:10px;font-weight:600;font-size:14px;">Try another ticker</a>
+    </div>
 
-    <main class="flex-grow w-full max-w-5xl mx-auto px-4 py-8 sm:px-6">
+    {% else %}
 
-        {% if result.error %}
-            <div class="stitch-card p-8 text-center max-w-lg mx-auto mt-10">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-6">
-                    <svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h2 class="text-2xl font-bold text-slate-900 mb-2">Analysis Failed</h2>
-                <p class="text-slate-500 mb-6">{{ result.error }}</p>
-                <a href="/" class="inline-block px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg transition-colors">Try another ticker</a>
+    <!-- ── Stock hero card ── -->
+    <div style="background:var(--surface);border-radius:20px;border:1px solid var(--border);padding:24px;margin-bottom:16px;">
+        <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;">
+            <!-- Logo placeholder -->
+            <div style="width:56px;height:56px;border-radius:14px;background:#F3F4F6;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="font-weight:800;font-size:16px;color:var(--text2);">{{ result.ticker[:2] }}</span>
             </div>
-        {% else %}
-
-            <!-- ── Header ── -->
-            <header class="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-6">
-                <div>
-                    <div class="flex items-center gap-3 mb-1">
-                        <h1 class="text-4xl sm:text-5xl font-bold text-slate-900">{{ result.ticker }}</h1>
-                        <span class="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full uppercase tracking-wide">
-                            {{ result.sector }}
-                        </span>
-                    </div>
-                    <p class="text-xl text-slate-500 mb-2">{{ result.name }}</p>
-                    <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                        <span>Price: <strong class="text-slate-900">${{ result.price }}</strong></span>
-                        <span>Market Cap: <strong class="text-slate-900">{{ result.market_cap }}</strong></span>
-                        <span>Industry: <strong class="text-slate-900">{{ result.industry }}</strong></span>
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-3 min-w-[220px]">
-                    <!-- Signal badge -->
-                    <div class="stitch-card p-4 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full {{ result.signal.color }}"></div>
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 pl-3">Signal</p>
-                        <h2 class="text-2xl font-bold text-slate-900 pl-3">{{ result.signal.label }}</h2>
-                        {% if result.signal.note %}
-                        <p class="text-xs text-amber-600 font-medium pl-3 mt-1">⚠ {{ result.signal.note }}</p>
-                        {% endif %}
-                    </div>
-                    <!-- Consensus + Data confidence -->
-                    <div class="flex gap-2">
-                        <div class="stitch-card p-3 flex-1 flex flex-col items-center">
-                            <span class="text-xs font-medium text-slate-400 uppercase">Consensus</span>
-                            <span class="text-xl font-bold text-slate-800">{{ result.consensus_score }}<span class="text-sm font-normal text-slate-400">/100</span></span>
-                        </div>
-                        <div class="stitch-card p-3 flex-1 flex flex-col items-center" title="Based on data availability">
-                            <span class="text-xs font-medium text-slate-400 uppercase">Data Conf.</span>
-                            <span class="text-xl font-bold text-slate-800">{{ result.confidence_score }}<span class="text-sm font-normal text-slate-400">%</span></span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- ── Convergence Analysis ── -->
-            <div class="mb-8">
-                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Agreement Heat — 10 Manager Consensus</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                    <!-- Bullish -->
-                    <div class="stitch-card p-4 border-emerald-100 bg-emerald-50/40">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            <h4 class="font-bold text-emerald-800 text-sm">Bullish (score &gt; 65)</h4>
-                            <span class="ml-auto text-2xl font-bold text-emerald-600">{{ result.convergence.bullish | length }}</span>
-                        </div>
-                        {% if result.convergence.bullish %}
-                        <p class="text-xs text-emerald-700 leading-relaxed">{{ result.convergence.bullish | join(', ') }}</p>
-                        {% else %}
-                        <p class="text-xs text-slate-400 italic">None</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Neutral -->
-                    <div class="stitch-card p-4 border-yellow-100 bg-yellow-50/40">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                            <h4 class="font-bold text-yellow-800 text-sm">Neutral (40 – 65)</h4>
-                            <span class="ml-auto text-2xl font-bold text-yellow-600">{{ result.convergence.neutral | length }}</span>
-                        </div>
-                        {% if result.convergence.neutral %}
-                        <p class="text-xs text-yellow-700 leading-relaxed">{{ result.convergence.neutral | join(', ') }}</p>
-                        {% else %}
-                        <p class="text-xs text-slate-400 italic">None</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Bearish -->
-                    <div class="stitch-card p-4 border-red-100 bg-red-50/40">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                            <h4 class="font-bold text-red-800 text-sm">Bearish (score &lt; 40)</h4>
-                            <span class="ml-auto text-2xl font-bold text-red-500">{{ result.convergence.bearish | length }}</span>
-                        </div>
-                        {% if result.convergence.bearish %}
-                        <p class="text-xs text-red-700 leading-relaxed">{{ result.convergence.bearish | join(', ') }}</p>
-                        {% else %}
-                        <p class="text-xs text-slate-400 italic">None</p>
-                        {% endif %}
-                    </div>
-
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">{{ result.ticker }}</div>
+                <div style="font-size:14px;color:var(--text2);">{{ result.name }}</div>
+                <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+                    {% if result.sector %}
+                    <span style="font-size:11px;font-weight:600;color:var(--text2);background:#F3F4F6;padding:2px 8px;border-radius:6px;">{{ result.sector }}</span>
+                    {% endif %}
+                    {% if result.industry %}
+                    <span style="font-size:11px;color:var(--text3);background:#F3F4F6;padding:2px 8px;border-radius:6px;">{{ result.industry }}</span>
+                    {% endif %}
                 </div>
             </div>
+            <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:28px;font-weight:800;letter-spacing:-0.5px;">${{ result.price }}</div>
+                <div style="font-size:13px;color:var(--text2);">Market cap: {{ result.market_cap }}</div>
+            </div>
+        </div>
 
-            <!-- ── Price Chart ── -->
-            <div class="stitch-card p-6 mb-8 w-full">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-900">Price History</h3>
-                    <div class="flex bg-slate-100 rounded-lg p-1">
-                        <button onclick="updateChart(180)" id="btn-6m" class="px-3 py-1 text-xs font-medium rounded-md text-slate-500 hover:text-slate-900 transition-colors">6M</button>
-                        <button onclick="updateChart(365)" id="btn-1y" class="px-3 py-1 text-xs font-medium rounded-md bg-white shadow-sm text-slate-900 transition-colors">1Y</button>
-                    </div>
-                </div>
-                <div class="relative h-64 w-full">
-                    <canvas id="priceChart"></canvas>
+        <!-- Composite score bar -->
+        <div style="padding-top:20px;border-top:1px solid var(--border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span style="font-size:13px;font-weight:600;color:var(--text2);">Overall Investor Score</span>
+                <div style="display:flex;align-items:baseline;gap:3px;">
+                    <span id="composite-num" style="font-size:28px;font-weight:800;color:
+                        {% if result.consensus_score >= 75 %}#00C805
+                        {% elif result.consensus_score >= 50 %}#F59E0B
+                        {% else %}#FF3B30{% endif %};">{{ result.consensus_score }}</span>
+                    <span style="font-size:13px;color:var(--text3);">/100</span>
                 </div>
             </div>
+            <div style="height:8px;background:#F3F4F6;border-radius:8px;overflow:hidden;">
+                <div id="composite-bar" class="score-fill" style="height:100%;border-radius:8px;width:0%;background:
+                    {% if result.consensus_score >= 75 %}#00C805
+                    {% elif result.consensus_score >= 50 %}#F59E0B
+                    {% else %}#FF3B30{% endif %};"></div>
+            </div>
+            {% if result.signal.note %}
+            <p style="font-size:12px;color:#D97706;margin-top:6px;">⚠ {{ result.signal.note }}</p>
+            {% endif %}
 
-            <!-- ── Manager Scorecards + Fundamentals ── -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                <!-- Manager Scorecards -->
-                <div class="lg:col-span-2 space-y-4">
-                    <h3 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2">
-                        10 Legendary Investor Scorecards
-                        <span class="text-sm font-normal text-slate-400 ml-2">Weighted consensus model</span>
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {% for mgr in result.managers %}
-                        <div class="stitch-card p-4">
-                            <!-- Name row -->
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2">
-                                    <h4 class="font-bold text-slate-800">{{ mgr.name }}</h4>
-                                    <span class="text-xs text-slate-400 font-medium">{{ mgr.weight }}%</span>
-                                </div>
-                                <!-- Verdict badge -->
-                                {% if mgr.verdict == 'Bullish' %}
-                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Bullish</span>
-                                {% elif mgr.verdict == 'Neutral' %}
-                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">Neutral</span>
-                                {% else %}
-                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-600">Bearish</span>
-                                {% endif %}
-                            </div>
-                            <!-- Philosophy -->
-                            <p class="text-xs text-slate-500 mb-3 leading-snug">{{ mgr.philosophy }}</p>
-                            <!-- Score bar -->
-                            <div class="flex items-center gap-3">
-                                <div class="flex-1 bg-slate-100 rounded-full h-2">
-                                    {% if mgr.verdict == 'Bullish' %}
-                                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ mgr.score }}%"></div>
-                                    {% elif mgr.verdict == 'Neutral' %}
-                                    <div class="h-2 rounded-full bg-yellow-400" style="width: {{ mgr.score }}%"></div>
-                                    {% else %}
-                                    <div class="h-2 rounded-full bg-red-400" style="width: {{ mgr.score }}%"></div>
-                                    {% endif %}
-                                </div>
-                                <span class="text-lg font-bold text-slate-800 w-10 text-right">{{ mgr.score }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+            <!-- BUY / HOLD / SELL summary -->
+            <div style="display:flex;gap:10px;margin-top:16px;">
+                {% set buy_ct = result.convergence.bullish | length %}
+                {% set hold_ct = result.convergence.neutral | length %}
+                {% set sell_ct = result.convergence.bearish | length %}
+                <div style="flex:1;text-align:center;padding:12px 8px;border-radius:10px;background:var(--green-bg);">
+                    <div style="font-size:22px;font-weight:800;color:var(--green);">{{ buy_ct }}</div>
+                    <div style="font-size:11px;font-weight:600;color:#059669;letter-spacing:0.06em;text-transform:uppercase;">BUY</div>
                 </div>
-
-                <!-- Key Fundamentals + How it works -->
-                <div class="space-y-4">
-                    <h3 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2">Key Fundamentals</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        {% for key, val in result.raw_metrics.items() %}
-                        <div class="bg-white p-3 rounded-lg border border-slate-200">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{{ key }}</span>
-                            <span class="text-sm font-semibold text-slate-800">{{ val }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Consensus breakdown -->
-                    <div class="stitch-card p-4 bg-slate-50">
-                        <h4 class="text-xs font-bold uppercase text-slate-500 mb-3">Weighted Consensus</h4>
-                        {% for mgr in result.managers %}
-                        <div class="flex items-center justify-between text-xs mb-1.5">
-                            <span class="text-slate-600 w-24 truncate">{{ mgr.name }}</span>
-                            <span class="text-slate-400 w-8 text-right">{{ mgr.weight }}%</span>
-                            <div class="flex-1 mx-2 bg-slate-200 rounded-full h-1.5">
-                                {% if mgr.verdict == 'Bullish' %}
-                                <div class="h-1.5 rounded-full bg-emerald-400" style="width: {{ mgr.score }}%"></div>
-                                {% elif mgr.verdict == 'Neutral' %}
-                                <div class="h-1.5 rounded-full bg-yellow-400" style="width: {{ mgr.score }}%"></div>
-                                {% else %}
-                                <div class="h-1.5 rounded-full bg-red-400" style="width: {{ mgr.score }}%"></div>
-                                {% endif %}
-                            </div>
-                            <span class="font-semibold text-slate-700 w-7 text-right">{{ mgr.score }}</span>
-                        </div>
-                        {% endfor %}
-                        <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center">
-                            <span class="text-xs font-bold text-slate-500 uppercase">Consensus Score</span>
-                            <span class="text-lg font-bold text-slate-900">{{ result.consensus_score }}/100</span>
-                        </div>
-                    </div>
-
-                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                        <h4 class="text-xs font-bold uppercase text-blue-600 mb-2">How It Works</h4>
-                        <p class="text-xs text-slate-600 leading-relaxed">Each manager scores 0–100 on their own criteria. The Consensus Score is a weighted average across all 10 frameworks. Convergence across independent lenses signals high confidence.</p>
-                    </div>
+                <div style="flex:1;text-align:center;padding:12px 8px;border-radius:10px;background:#FEF3C7;">
+                    <div style="font-size:22px;font-weight:800;color:#D97706;">{{ hold_ct }}</div>
+                    <div style="font-size:11px;font-weight:600;color:#D97706;letter-spacing:0.06em;text-transform:uppercase;">HOLD</div>
+                </div>
+                <div style="flex:1;text-align:center;padding:12px 8px;border-radius:10px;background:var(--red-bg);">
+                    <div style="font-size:22px;font-weight:800;color:var(--red);">{{ sell_ct }}</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--red);letter-spacing:0.06em;text-transform:uppercase;">SELL</div>
                 </div>
             </div>
+        </div>
+    </div>
 
-        {% endif %}
-    </main>
+    <!-- ── Price chart ── -->
+    <div style="background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:15px;font-weight:700;">Price History</div>
+            <div style="display:flex;gap:4px;background:#F3F4F6;border-radius:8px;padding:3px;">
+                <button onclick="updateChart(180)" id="btn-6m" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;">6M</button>
+                <button onclick="updateChart(365)" id="btn-1y" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1);color:var(--text);transition:all .15s;">1Y</button>
+            </div>
+        </div>
+        <div style="position:relative;height:200px;">
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
 
-    <footer class="w-full py-6 mt-auto text-center text-slate-400 text-sm border-t border-slate-200 bg-white">
-        <p>Data provided by Yahoo Finance. This is an educational framework — not financial advice. Always consult a qualified financial advisor before making investment decisions.</p>
-    </footer>
+    <!-- ── Framework breakdown ── -->
+    <div style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">Framework Breakdown</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-bottom:24px;">
+        {% for mgr in result.managers %}
+        {% set meta = MANAGER_META.get(mgr.name, {"color":"#6B7280","bg":"#F1F5F9","full":mgr.name,"initial":mgr.name[:2].upper()}) %}
+        <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;">
+            <!-- Header -->
+            <div style="padding:14px 16px;background:{{ meta.bg }};display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:{{ meta.color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <span style="font-size:11px;font-weight:800;color:#fff;">{{ meta.initial }}</span>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:14px;color:var(--text);">{{ meta.full }}</div>
+                        <div style="font-size:11px;color:var(--text2);font-weight:500;">Framework · {{ mgr.weight }}% weight</div>
+                    </div>
+                </div>
+                <!-- Verdict badge -->
+                {% if mgr.verdict == 'Bullish' %}
+                <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#059669;background:rgba(0,200,5,0.12);padding:4px 10px;border-radius:20px;">BUY</span>
+                {% elif mgr.verdict == 'Neutral' %}
+                <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#D97706;background:rgba(245,158,11,0.12);padding:4px 10px;border-radius:20px;">HOLD</span>
+                {% else %}
+                <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--red);background:rgba(255,59,48,0.12);padding:4px 10px;border-radius:20px;">SELL</span>
+                {% endif %}
+            </div>
+            <!-- Score bar + philosophy -->
+            <div style="padding:14px 16px 14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="font-size:12px;color:var(--text2);font-weight:500;">Score</span>
+                    <span style="font-size:20px;font-weight:800;color:{{ meta.color }};">{{ mgr.score }}</span>
+                </div>
+                <div style="height:6px;background:#F3F4F6;border-radius:4px;overflow:hidden;margin-bottom:10px;">
+                    <div class="score-fill" data-score="{{ mgr.score }}" data-color="{{ meta.color }}"
+                         style="height:100%;border-radius:4px;background:{{ meta.color }};width:0%;"></div>
+                </div>
+                <p style="font-size:13px;color:var(--text2);line-height:1.5;">{{ mgr.philosophy }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
-    {% if not result.error %}
-    <script>
-        let myChart = null;
-        let chartData = { dates: [], prices: [] };
-
-        async function fetchChartData() {
-            try {
-                const response = await fetch(`/api/chart/{{ result.ticker }}`);
-                chartData = await response.json();
-                if (chartData.dates && chartData.dates.length > 0) {
-                    updateChart(365);
-                }
-            } catch (e) {
-                console.error("Failed to load chart data", e);
-            }
-        }
-
-        function updateChart(days) {
-            document.getElementById('btn-6m').className = days === 180
-                ? 'px-3 py-1 text-xs font-medium rounded-md bg-white shadow-sm text-slate-900 transition-colors'
-                : 'px-3 py-1 text-xs font-medium rounded-md text-slate-500 hover:text-slate-900 transition-colors';
-            document.getElementById('btn-1y').className = days === 365
-                ? 'px-3 py-1 text-xs font-medium rounded-md bg-white shadow-sm text-slate-900 transition-colors'
-                : 'px-3 py-1 text-xs font-medium rounded-md text-slate-500 hover:text-slate-900 transition-colors';
-
-            if (!chartData.dates || chartData.dates.length === 0) return;
-
-            const sliceAmount = days === 180 ? Math.floor(chartData.dates.length / 2) : 0;
-            const dates  = chartData.dates.slice(sliceAmount);
-            const prices = chartData.prices.slice(sliceAmount);
-
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            if (myChart) myChart.destroy();
-
-            const isPositive = prices[prices.length - 1] >= prices[0];
-            const color = isPositive ? '#10B981' : '#EF4444';
-
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Price',
-                        data: prices,
-                        borderColor: color,
-                        backgroundColor: isPositive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            mode: 'index', intersect: false,
-                            callbacks: { label: ctx => '$' + ctx.parsed.y.toFixed(2) }
-                        }
-                    },
-                    scales: {
-                        x: { display: true, grid: { display: false }, ticks: { maxTicksLimit: 6, color: '#94A3B8' } },
-                        y: { display: true, position: 'right', grid: { color: '#F1F5F9' }, ticks: { color: '#94A3B8' } }
-                    },
-                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
-                }
-            });
-        }
-
-        fetchChartData();
-    </script>
+    <!-- ── Key Fundamentals ── -->
+    {% if result.raw_metrics %}
+    <div style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">Key Fundamentals</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:24px;">
+        {% for key, val in result.raw_metrics.items() %}
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:4px;">{{ key }}</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">{{ val }}</div>
+        </div>
+        {% endfor %}
+    </div>
     {% endif %}
+
+    <!-- ── How it works ── -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:8px;">How It Works</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.6;">Each manager scores 0–100 on their own criteria. The Consensus Score is a weighted average across all 10 frameworks. Convergence across independent lenses signals high confidence.</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:8px;">Data confidence: <strong style="color:var(--text);">{{ result.confidence_score }}%</strong></p>
+    </div>
+
+    {% endif %}
+</main>
+
+<footer style="padding:24px 20px;text-align:center;font-size:12px;color:var(--text3);border-top:1px solid var(--border);background:var(--surface);">
+    Data provided by Yahoo Finance. Educational framework only — not financial advice.
+</footer>
+
+{% if not result.error %}
+<script>
+let myChart = null;
+let chartData = { dates: [], prices: [] };
+
+async function fetchChartData() {
+    try {
+        const r = await fetch('/api/chart/{{ result.ticker }}');
+        chartData = await r.json();
+        if (chartData.dates && chartData.dates.length) updateChart(365);
+    } catch(e) {}
+}
+
+function updateChart(days) {
+    const active = 'padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1);color:var(--text);transition:all .15s;';
+    const inactive = 'padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;color:var(--text2);transition:all .15s;';
+    document.getElementById('btn-6m').style.cssText = days === 180 ? active : inactive;
+    document.getElementById('btn-1y').style.cssText = days === 365 ? active : inactive;
+    if (!chartData.dates || !chartData.dates.length) return;
+    const sliceFrom = days === 180 ? Math.floor(chartData.dates.length / 2) : 0;
+    const dates  = chartData.dates.slice(sliceFrom);
+    const prices = chartData.prices.slice(sliceFrom);
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    if (myChart) myChart.destroy();
+    const isPos = prices[prices.length - 1] >= prices[0];
+    const col = isPos ? '#00C805' : '#FF3B30';
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{ label: 'Price', data: prices, borderColor: col, backgroundColor: isPos ? 'rgba(0,200,5,0.07)' : 'rgba(255,59,48,0.07)', borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.1 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, callbacks: { label: c => '$' + c.parsed.y.toFixed(2) } } },
+            scales: {
+                x: { display: true, grid: { display: false }, ticks: { maxTicksLimit: 6, color: '#9CA3AF', font: { family: 'DM Sans' } } },
+                y: { display: true, position: 'right', grid: { color: '#F3F4F6' }, ticks: { color: '#9CA3AF', font: { family: 'DM Sans' } } }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+    });
+}
+
+// Animate score bars on load
+window.addEventListener('DOMContentLoaded', () => {
+    fetchChartData();
+    // Composite bar
+    setTimeout(() => {
+        document.getElementById('composite-bar').style.width = '{{ result.consensus_score }}%';
+    }, 100);
+    // Investor bars
+    setTimeout(() => {
+        document.querySelectorAll('.score-fill[data-score]').forEach(el => {
+            el.style.width = el.dataset.score + '%';
+        });
+    }, 200);
+});
+</script>
+{% endif %}
 
 </body>
 </html>

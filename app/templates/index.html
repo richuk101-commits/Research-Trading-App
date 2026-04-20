@@ -3,236 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Investor Lens - Stock Analysis</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Investor Lens — Stock Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
-        .stitch-card {
-            background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #F4F5F7; --surface: #FFFFFF; --text: #0C0D0F; --text2: #6B7280; --text3: #9CA3AF;
+            --border: #E8E9EC; --green: #00C805; --green-bg: #E8FDE9; --red: #FF3B30; --red-bg: #FFF0EF;
+            --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+            --shadow-lg: 0 4px 24px rgba(0,0,0,.10);
         }
-        .stitch-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); transform: translateY(-2px); }
-        .stitch-input { border: 1px solid #E2E8F0; border-radius: 9999px; transition: all 0.2s; }
-        .stitch-input:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        
-        #autocomplete-results {
-            display: none; position: absolute; top: 100%; left: 0; right: 0;
-            background: white; border: 1px solid #E2E8F0; border-radius: 1rem;
-            margin-top: 8px; z-index: 50; overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-        }
+        html, body { min-height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { text-decoration: none; color: inherit; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+<body>
 
-    <nav class="w-full max-w-5xl mx-auto px-6 py-6 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span class="font-bold text-xl tracking-tight">Investor Lens</span>
+<!-- Nav -->
+<nav style="position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;">
+    <a href="/" style="display:flex;align-items:center;gap:8px;">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:#fff;font-size:13px;font-weight:700;letter-spacing:-0.5px;">IL</span>
+        </span>
+        <span style="font-weight:700;font-size:16px;letter-spacing:-0.4px;">Investor Lens</span>
+    </a>
+    <a href="/scanner" id="nav-btn"
+       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;"
+       onmouseover="this.style.background='var(--text)';this.style.color='#fff';"
+       onmouseout="this.style.background='transparent';this.style.color='var(--text2)';">
+        Top Picks
+    </a>
+</nav>
+
+<main>
+    <!-- Hero -->
+    <div style="padding:56px 20px 36px;max-width:680px;margin:0 auto;">
+        <div style="margin-bottom:10px;">
+            <span id="live-badge" style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--green);background:var(--green-bg);padding:3px 10px;border-radius:20px;"></span>
         </div>
-        <a href="/scanner" class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm font-medium text-slate-600 hover:text-blue-700">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            Top Picks
-        </a>
-    </nav>
+        <h1 style="font-family:'Playfair Display',serif;font-style:italic;font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1.1;letter-spacing:-1px;margin-bottom:16px;color:var(--text);">
+            See stocks through<br>the eyes of legends.
+        </h1>
+        <p style="font-size:17px;color:var(--text2);line-height:1.6;margin-bottom:32px;max-width:480px;">
+            Instant analysis across 10 legendary investor frameworks — Buffett, Lynch, Graham and beyond.
+        </p>
 
-    <main class="flex-grow w-full max-w-3xl mx-auto px-6 py-12 flex flex-col items-center">
-        
-        <div class="text-center mb-10 w-full">
-            <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 mb-4">See stocks through the eyes of legends.</h1>
-            <p class="text-lg text-slate-500 mb-8 max-w-xl mx-auto">Instant analysis across 10 legendary investor frameworks including Buffett, Lynch, Graham and Burry.</p>
-            
-            <form action="/analyze" method="post" class="w-full relative max-w-lg mx-auto" id="search-form">
-                <div class="relative flex items-center">
-                    <svg class="h-5 w-5 absolute left-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <!-- Search -->
+        <div style="position:relative;max-width:480px;">
+            <form action="/analyze" method="post" id="search-form">
+                <div id="search-wrap" style="display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;border:2px solid var(--border);padding:0 16px;transition:border .15s,box-shadow .15s;box-shadow:var(--shadow);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
-                    <input type="text" name="ticker" id="ticker-input" placeholder="Search company or ticker (e.g. AAPL)" autocomplete="off"
-                           class="w-full stitch-input py-4 pl-14 pr-32 text-slate-900 bg-white placeholder-slate-400 text-lg">
-                    <button type="submit" class="absolute right-2 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-full transition-colors">
-                        Analyse
+                    <input type="text" name="ticker" id="ticker-input" autocomplete="off"
+                           placeholder="Search ticker or company…"
+                           style="flex:1;border:none;outline:none;font-size:16px;padding:16px 0;background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;">
+                    <button type="button" id="clear-btn" style="display:none;color:var(--text3);padding:4px;line-height:0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
                     </button>
                 </div>
-                
-                <!-- Autocomplete Dropdown -->
-                <div id="autocomplete-results">
-                    <ul id="results-list" class="divide-y divide-slate-100"></ul>
-                </div>
             </form>
-
-            <!-- Daily Gem Hunt CTA -->
-            <a href="/scanner"
-               class="group mt-4 w-full max-w-lg mx-auto flex items-center justify-between gap-4
-                      px-5 py-4 rounded-2xl border border-slate-200 bg-white
-                      hover:border-blue-300 hover:shadow-md transition-all duration-200 block">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600
-                                flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                        </svg>
-                    </div>
-                    <div class="text-left">
-                        <p class="text-sm font-semibold text-slate-900">Daily Gem Hunt</p>
-                        <p class="text-xs text-slate-400">10 stocks drawn today from a 1,000-stock universe</p>
-                    </div>
-                </div>
-                <svg class="h-4 w-4 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-            </a>
-        </div>
-
-        <!-- News Feed -->
-        <div class="w-full mt-8">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Market News</h3>
-                <span id="news-status" class="text-xs text-slate-400"></span>
-            </div>
-            <div id="news-feed" class="space-y-2">
-                <!-- Loading skeleton -->
-                <div class="news-skeleton stitch-card p-4 animate-pulse flex gap-3">
-                    <div class="flex-1 space-y-2">
-                        <div class="h-3 bg-slate-200 rounded w-3/4"></div>
-                        <div class="h-3 bg-slate-200 rounded w-1/2"></div>
-                    </div>
-                </div>
-                <div class="news-skeleton stitch-card p-4 animate-pulse flex gap-3">
-                    <div class="flex-1 space-y-2">
-                        <div class="h-3 bg-slate-200 rounded w-5/6"></div>
-                        <div class="h-3 bg-slate-200 rounded w-2/5"></div>
-                    </div>
-                </div>
-                <div class="news-skeleton stitch-card p-4 animate-pulse flex gap-3">
-                    <div class="flex-1 space-y-2">
-                        <div class="h-3 bg-slate-200 rounded w-2/3"></div>
-                        <div class="h-3 bg-slate-200 rounded w-1/3"></div>
-                    </div>
-                </div>
+            <div id="autocomplete-results" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--surface);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;z-index:200;">
+                <ul id="results-list" style="list-style:none;margin:0;padding:0;"></ul>
             </div>
         </div>
-        
-    </main>
 
-    <footer class="w-full py-6 text-center text-slate-400 text-sm">
-        <p>Data provided by Yahoo Finance.</p>
-    </footer>
+        <!-- Quick picks -->
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:13px;color:var(--text3);align-self:center;">Try:</span>
+            <!-- chips injected by JS -->
+            <div id="quick-chips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>
+    </div>
 
-    <script>
-        const input = document.getElementById('ticker-input');
-        const resultsContainer = document.getElementById('autocomplete-results');
-        const resultsList = document.getElementById('results-list');
-        let timeout = null;
+    <!-- Daily Gem Hunt card -->
+    <div style="padding:0 20px 24px;max-width:680px;margin:0 auto;">
+        <a href="/scanner" id="gem-card"
+           style="display:block;width:100%;padding:24px;border-radius:16px;text-align:left;background:var(--text);color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;text-decoration:none;"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-lg)';"
+           onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+            <!-- Background blobs -->
+            <div style="position:absolute;right:-20px;top:-20px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
+            <div style="position:absolute;right:40px;bottom:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
+            <div style="position:relative;z-index:1;">
+                <div style="display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;"></span>
+                    Today · 10 Stocks
+                </div>
+                <div style="font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px;">Daily Gem Hunt</div>
+                <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:20px;">
+                    10 stocks drawn from a 1,000-stock universe, scored across all 10 frameworks.
+                </div>
+                <!-- Mini ticker strip -->
+                <div id="gem-strip" style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;color:rgba(255,255,255,0.4);">Loading today's picks…</div>
+                </div>
+            </div>
+        </a>
+    </div>
 
-        input.addEventListener('input', function() {
-            clearTimeout(timeout);
-            const query = this.value.trim();
-            
-            if (query.length < 2) {
-                resultsContainer.style.display = 'none';
-                return;
+    <!-- Investor framework chips -->
+    <div style="padding:0 20px 32px;max-width:680px;margin:0 auto;">
+        <div style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">10 Frameworks</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#F59E0B;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">WB</span></div><span style="font-size:13px;font-weight:500;">Buffett</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#14B8A6;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">PL</span></div><span style="font-size:13px;font-weight:500;">Lynch</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#3B82F6;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">BG</span></div><span style="font-size:13px;font-weight:500;">Graham</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#64748B;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">HM</span></div><span style="font-size:13px;font-weight:500;">Marks</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#6366F1;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">RD</span></div><span style="font-size:13px;font-weight:500;">Dalio</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">MB</span></div><span style="font-size:13px;font-weight:500;">Burry</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#EC4899;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">PF</span></div><span style="font-size:13px;font-weight:500;">Fisher</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#8B5CF6;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">CW</span></div><span style="font-size:13px;font-weight:500;">Wood</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#F97316;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">JG</span></div><span style="font-size:13px;font-weight:500;">Greenblatt</span></div>
+            <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:#10B981;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;font-weight:700;color:#fff;">SD</span></div><span style="font-size:13px;font-weight:500;">Druckenmiller</span></div>
+        </div>
+    </div>
+
+    <!-- Market News -->
+    <div style="padding:0 20px 56px;max-width:680px;margin:0 auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">Market News</div>
+            <span id="news-age" style="font-size:12px;color:var(--text3);">via Yahoo Finance</span>
+        </div>
+        <!-- News skeleton -->
+        <div id="news-feed" style="border-radius:16px;overflow:hidden;border:1px solid var(--border);">
+            <div style="background:var(--surface);padding:16px 20px;display:flex;gap:12px;border-bottom:1px solid var(--border);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                    <div style="height:13px;background:#F3F4F6;border-radius:6px;width:75%;animation:pulse 1.4s infinite;"></div>
+                    <div style="height:11px;background:#F3F4F6;border-radius:6px;width:40%;animation:pulse 1.4s infinite;"></div>
+                </div>
+            </div>
+            <div style="background:var(--surface);padding:16px 20px;display:flex;gap:12px;border-bottom:1px solid var(--border);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                    <div style="height:13px;background:#F3F4F6;border-radius:6px;width:85%;animation:pulse 1.4s infinite;"></div>
+                    <div style="height:11px;background:#F3F4F6;border-radius:6px;width:35%;animation:pulse 1.4s infinite;"></div>
+                </div>
+            </div>
+            <div style="background:var(--surface);padding:16px 20px;display:flex;gap:12px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                    <div style="height:13px;background:#F3F4F6;border-radius:6px;width:65%;animation:pulse 1.4s infinite;"></div>
+                    <div style="height:11px;background:#F3F4F6;border-radius:6px;width:45%;animation:pulse 1.4s infinite;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer style="padding:24px 20px;text-align:center;font-size:12px;color:var(--text3);border-top:1px solid var(--border);background:var(--surface);">
+    Data provided by Yahoo Finance. Not financial advice.
+</footer>
+
+<style>
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+
+<script>
+// ── Live badge date ──────────────────────────────────────────────────────────
+(function() {
+    const d = new Date();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('live-badge').textContent =
+        'Live · ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+})();
+
+// ── Quick pick chips ─────────────────────────────────────────────────────────
+['AAPL','NVDA','MSFT','TSLA','V'].forEach(t => {
+    const btn = document.createElement('button');
+    btn.textContent = t;
+    btn.style.cssText = 'padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text);transition:all .1s;font-family:"DM Sans",sans-serif;';
+    btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--text)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--text)'; });
+    btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--surface)'; btn.style.color = 'var(--text)'; btn.style.borderColor = 'var(--border)'; });
+    btn.addEventListener('click', () => {
+        document.getElementById('ticker-input').value = t;
+        document.getElementById('search-form').submit();
+    });
+    document.getElementById('quick-chips').appendChild(btn);
+});
+
+// ── Search autocomplete ──────────────────────────────────────────────────────
+const input = document.getElementById('ticker-input');
+const wrap = document.getElementById('search-wrap');
+const dropdown = document.getElementById('autocomplete-results');
+const list = document.getElementById('results-list');
+const clearBtn = document.getElementById('clear-btn');
+let searchTimeout = null;
+
+input.addEventListener('focus', () => {
+    wrap.style.borderColor = 'var(--text)';
+    wrap.style.boxShadow = '0 0 0 4px rgba(0,0,0,0.06)';
+});
+input.addEventListener('blur', () => {
+    wrap.style.borderColor = 'var(--border)';
+    wrap.style.boxShadow = 'var(--shadow)';
+    setTimeout(() => { dropdown.style.display = 'none'; }, 180);
+});
+input.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    clearBtn.style.display = this.value ? 'block' : 'none';
+    const q = this.value.trim();
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+    searchTimeout = setTimeout(async () => {
+        try {
+            const r = await fetch('/api/search?q=' + encodeURIComponent(q));
+            const data = await r.json();
+            list.innerHTML = '';
+            if (data.results && data.results.length) {
+                data.results.forEach((item, i) => {
+                    const li = document.createElement('li');
+                    li.style.cssText = 'padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;border-bottom:' + (i < data.results.length-1 ? '1px solid var(--border)' : 'none') + ';transition:background .1s;background:transparent;';
+                    li.innerHTML = `<div><div style="font-weight:700;font-size:15px;">${item.symbol}</div><div style="font-size:13px;color:var(--text2);">${item.name}</div></div><span style="font-size:11px;color:var(--text3);background:#F3F4F6;padding:3px 8px;border-radius:6px;text-transform:uppercase;">${item.exchange}</span>`;
+                    li.addEventListener('mouseenter', () => li.style.background = '#F8F9FB');
+                    li.addEventListener('mouseleave', () => li.style.background = 'transparent');
+                    li.addEventListener('mousedown', () => {
+                        input.value = item.symbol;
+                        dropdown.style.display = 'none';
+                        document.getElementById('search-form').submit();
+                    });
+                    list.appendChild(li);
+                });
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
             }
+        } catch(e) {}
+    }, 300);
+});
+clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.style.display = 'none';
+    dropdown.style.display = 'none';
+    input.focus();
+});
 
-            timeout = setTimeout(async () => {
-                try {
-                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-                    const data = await response.json();
-                    
-                    resultsList.innerHTML = '';
-                    if (data.results && data.results.length > 0) {
-                        data.results.forEach(item => {
-                            const li = document.createElement('li');
-                            li.className = 'px-4 py-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center text-left';
-                            li.innerHTML = `
-                                <div>
-                                    <span class="font-bold text-slate-800">${item.symbol}</span>
-                                    <span class="text-sm text-slate-500 ml-2 block sm:inline">${item.name}</span>
-                                </div>
-                                <span class="text-xs text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded">${item.exchange}</span>
-                            `;
-                            li.addEventListener('click', () => {
-                                input.value = item.symbol;
-                                resultsContainer.style.display = 'none';
-                                document.getElementById('search-form').submit();
-                            });
-                            resultsList.appendChild(li);
-                        });
-                        resultsContainer.style.display = 'block';
-                    } else {
-                        resultsContainer.style.display = 'none';
-                    }
-                } catch (e) {
-                    console.error('Search error:', e);
-                }
-            }, 300); // debounce 300ms
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!document.getElementById('search-form').contains(e.target)) {
-                resultsContainer.style.display = 'none';
+// ── Gem Hunt card: load today's tickers ─────────────────────────────────────
+(async function() {
+    const strip = document.getElementById('gem-strip');
+    const scoreColor = s => s >= 75 ? 'var(--green)' : s >= 50 ? '#F59E0B' : 'var(--red)';
+    try {
+        const resp = await fetch('/api/scan/daily-tickers');
+        const data = await resp.json();
+        const tickers = data.tickers || [];
+        // Check if we have cached scores for today
+        let byTicker = {};
+        try {
+            const raw = localStorage.getItem('il_daily_scan_v3');
+            if (raw) {
+                const c = JSON.parse(raw);
+                if (c.date === data.date) byTicker = c.byTicker || {};
             }
-        });
+        } catch(e) {}
+        const preview = tickers.slice(0, 5);
+        const rest = tickers.length - preview.length;
+        strip.innerHTML = preview.map(t => {
+            const r = byTicker[t];
+            const scoreHtml = r ? `<span style="font-size:12px;font-weight:700;color:${scoreColor(r.consensus)};">${r.consensus}</span>` : '';
+            return `<div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:6px;"><span style="font-weight:700;font-size:13px;">${t}</span>${scoreHtml}</div>`;
+        }).join('') +
+        `<div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;color:rgba(255,255,255,0.5);">+${rest} more →</div>`;
+    } catch(e) {
+        strip.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.5);">See today\'s picks →</div>';
+    }
+})();
 
-        // ── News Feed ──────────────────────────────────────────────────────
-        const NEWS_REFRESH_MS = 10 * 60 * 1000; // 10 minutes
-        let newsRefreshTimer = null;
-        let lastFetchedAt = null;
+// ── News feed ────────────────────────────────────────────────────────────────
+const NEWS_TTL = 10 * 60 * 1000;
+async function loadNews() {
+    try {
+        const r = await fetch('/api/news');
+        const data = await r.json();
+        renderNews(data.items || [], data.age_secs || 0);
+    } catch(e) {
+        document.getElementById('news-age').textContent = 'Could not load news.';
+    }
+}
+function renderNews(items, ageSecs) {
+    const feed = document.getElementById('news-feed');
+    const ageEl = document.getElementById('news-age');
+    if (!items.length) {
+        feed.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:14px;">No news available.</div>';
+        return;
+    }
+    feed.innerHTML = items.map((item, i) => `
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer"
+           style="display:flex;align-items:flex-start;gap:12px;padding:16px 20px;background:var(--surface);border-bottom:${i < items.length-1 ? '1px solid var(--border)' : 'none'};text-decoration:none;transition:background .1s;"
+           onmouseover="this.style.background='#F8F9FB';" onmouseout="this.style.background='var(--surface)';">
+            <div style="flex:1;">
+                <div style="font-size:14px;font-weight:500;line-height:1.4;color:var(--text);">${item.title}</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:4px;">${item.source} · ${item.age}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:2px;">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+        </a>`).join('');
+    const mins = ageSecs > 0 ? Math.round(ageSecs / 60) : 0;
+    ageEl.textContent = mins > 0 ? `Updated ${mins}m ago` : 'Just updated';
+}
+loadNews();
+setInterval(loadNews, NEWS_TTL);
+</script>
 
-        async function loadNews() {
-            try {
-                const res = await fetch('/api/news');
-                const data = await res.json();
-                renderNews(data.items || [], data.age_secs || 0);
-                lastFetchedAt = Date.now();
-            } catch (e) {
-                document.getElementById('news-status').textContent = 'Could not load news.';
-            }
-        }
-
-        function renderNews(items, ageSecs) {
-            const feed = document.getElementById('news-feed');
-            const status = document.getElementById('news-status');
-
-            if (!items.length) {
-                feed.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No news available.</p>';
-                return;
-            }
-
-            feed.innerHTML = items.map(item => `
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer"
-                   class="stitch-card p-4 flex items-start justify-between gap-4 group block hover:border-blue-200">
-                    <p class="text-sm font-medium text-slate-800 group-hover:text-blue-600 leading-snug flex-1 transition-colors">
-                        ${item.title}
-                    </p>
-                    <div class="flex-shrink-0 text-right">
-                        <span class="text-xs text-slate-400 block">${item.source}</span>
-                        <span class="text-xs text-slate-400 block">${item.age}</span>
-                    </div>
-                </a>
-            `).join('');
-
-            const mins = ageSecs > 0 ? Math.round(ageSecs / 60) : 0;
-            status.textContent = mins > 0 ? `Updated ${mins}m ago` : 'Just updated';
-        }
-
-        function startNewsRefresh() {
-            clearInterval(newsRefreshTimer);
-            newsRefreshTimer = setInterval(loadNews, NEWS_REFRESH_MS);
-        }
-
-        // Load immediately, then refresh every 10 minutes
-        loadNews();
-        startNewsRefresh();
-    </script>
 </body>
 </html>

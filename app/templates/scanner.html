@@ -3,482 +3,459 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Scan — Investor Lens</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Daily Gem Hunt — Investor Lens</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
-        .stitch-card {
-            background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1rem;
-            box-shadow: 0 2px 6px -1px rgba(0,0,0,0.04);
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #F4F5F7; --surface: #FFFFFF; --text: #0C0D0F; --text2: #6B7280; --text3: #9CA3AF;
+            --border: #E8E9EC; --green: #00C805; --green-bg: #E8FDE9; --red: #FF3B30; --red-bg: #FFF0EF;
+            --amber: #F59E0B; --amber-bg: #FEF3C7;
+            --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+            --shadow-lg: 0 4px 24px rgba(0,0,0,.10);
         }
-        tr.result-row { cursor: pointer; }
-        tr.result-row:hover { background-color: #F8FAFC; }
+        html, body { min-height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+        a { text-decoration: none; color: inherit; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
         .ticker-chip {
             display: flex; align-items: center; justify-content: space-between;
-            border: 1px solid #E2E8F0; border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem; background: #fff; transition: all 0.2s;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 14px; transition: all .2s;
         }
-        .ticker-chip.scanning { border-color: #93C5FD; background: #EFF6FF; animation: pulse 1.2s infinite; }
-        .ticker-chip.done-pass { border-color: #6EE7B7; background: #ECFDF5; }
-        .ticker-chip.done-fail { border-color: #E2E8F0; background: #F8FAFC; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
-        .history-card { transition: all 0.15s; }
-        .history-card.active { border-color: #3B82F6 !important; background: #EFF6FF !important; }
-        .history-card:hover:not(.active) { border-color: #94A3B8; }
-        .progress-bar { transition: width 0.5s ease; }
+        .ticker-chip.scanning { border-color: #93C5FD; background: #EFF6FF; animation: chipPulse 1.2s infinite; }
+        .ticker-chip.done-pass { border-color: #6EE7B7; background: #F0FDF4; }
+        .ticker-chip.done-fail { border-color: var(--border); background: #FAFAFA; }
+        @keyframes chipPulse { 0%,100%{opacity:1} 50%{opacity:.6} }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner { animation: spin 0.8s linear infinite; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .card-enter { animation: fadeUp .3s ease both; }
+        .history-card { transition: all .15s; }
+        .history-card:hover { border-color: #94A3B8 !important; }
+        .history-card.active { border-color: #3B82F6 !important; background: #EFF6FF !important; }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+<body>
 
 <!-- Nav -->
-<nav class="w-full max-w-6xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center border-b border-slate-200 bg-white">
-    <a href="/" class="flex items-center gap-2 group">
-        <svg class="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
-        <span class="font-medium text-slate-500 group-hover:text-slate-900 transition-colors">Home</span>
+<nav style="position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;">
+    <a href="/" style="display:flex;align-items:center;gap:8px;">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span style="color:#fff;font-size:13px;font-weight:700;letter-spacing:-0.5px;">IL</span>
+        </span>
+        <span style="font-weight:700;font-size:16px;letter-spacing:-0.4px;">Investor Lens</span>
     </a>
-    <div class="flex items-center gap-2">
-        <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-        </svg>
-        <span class="font-bold text-lg tracking-tight">Investor Lens</span>
-    </div>
+    <a href="/"
+       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;"
+       onmouseover="this.style.background='var(--text)';this.style.color='#fff';"
+       onmouseout="this.style.background='transparent';this.style.color='var(--text2)';">
+        ← Home
+    </a>
 </nav>
 
-<main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8 sm:px-6">
+<main style="max-width:760px;margin:0 auto;padding:0 20px 60px;">
 
-    <!-- Hero header -->
-    <div class="mb-8 text-center">
-        <div class="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
-            Daily Gem Hunt
+    <!-- Page header -->
+    <div style="padding:28px 0 20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+            <div id="date-label" style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;"></div>
+            <h1 style="font-size:26px;font-weight:700;letter-spacing:-0.5px;">Daily Gem Hunt</h1>
+            <p style="font-size:14px;color:var(--text2);margin-top:4px;">{{ daily_scan_size }} stocks scored across all 10 legendary frameworks · universe of {{ total_stocks }}</p>
         </div>
-        <h1 class="text-4xl font-extrabold text-slate-900 mb-2">Today's 10 Picks</h1>
-        <p class="text-slate-500 max-w-lg mx-auto" id="hero-sub">
-            Every day, {{ daily_scan_size }} stocks are drawn from a universe of <strong>{{ total_stocks }}</strong> and
-            scored across all 10 legendary investor frameworks. Come back tomorrow for a fresh set.
-        </p>
-        <p class="text-sm font-medium text-slate-400 mt-2" id="today-date-label"></p>
+        <!-- Sort buttons (shown after scan) -->
+        <div id="sort-bar" style="display:none;gap:4px;">
+            <button id="sort-score" onclick="setSort('score')" style="padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;background:var(--text);color:#fff;border:1px solid var(--border);transition:all .15s;">Score</button>
+            <button id="sort-price" onclick="setSort('price')" style="padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;background:var(--surface);color:var(--text2);border:1px solid var(--border);transition:all .15s;">Price</button>
+        </div>
     </div>
 
-    <!-- Today's ticker grid (pre-scan: chips, post-scan: hidden by results) -->
-    <div id="ticker-grid-section" class="mb-8">
-        <div id="ticker-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <!-- Populated by JS -->
+    <!-- Today's ticker chips -->
+    <div id="ticker-section" style="margin-bottom:24px;">
+        <div id="ticker-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+            <!-- populated by JS -->
         </div>
-        <div id="scan-action" class="mt-6 text-center hidden">
+        <!-- Scan action -->
+        <div id="scan-action" style="display:none;margin-top:20px;text-align:center;">
             <button id="btn-scan" onclick="startScan()"
-                    class="px-8 py-3 bg-slate-900 hover:bg-slate-700 text-white font-semibold rounded-full transition-colors text-sm shadow-sm">
+                    style="padding:14px 32px;background:var(--text);color:#fff;font-size:15px;font-weight:600;border-radius:12px;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.15);"
+                    onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(0,0,0,.2)';"
+                    onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,.15)';">
                 Score Today's 10 Stocks
             </button>
-            <p class="text-xs text-slate-400 mt-2">Takes about 15–20 seconds</p>
+            <p style="font-size:12px;color:var(--text3);margin-top:8px;">Takes about 15–20 seconds</p>
         </div>
-        <div id="scan-progress" class="mt-5 hidden">
-            <div class="max-w-sm mx-auto">
-                <div class="flex justify-between items-center mb-2">
-                    <span id="progress-label" class="text-sm text-slate-600 font-medium">Scoring…</span>
-                    <span id="progress-pct" class="text-sm font-bold text-slate-900">0%</span>
+        <!-- Progress -->
+        <div id="scan-progress" style="display:none;margin-top:16px;">
+            <div style="max-width:360px;margin:0 auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span id="progress-label" style="font-size:13px;color:var(--text2);font-weight:500;">Contacting market data…</span>
+                    <span id="progress-pct" style="font-size:13px;font-weight:700;color:var(--text);">0%</span>
                 </div>
-                <div class="bg-slate-100 rounded-full h-2">
-                    <div id="progress-bar" class="progress-bar h-2 rounded-full bg-blue-500" style="width:0%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Results (hidden until scan completes) -->
-    <div id="results-section" class="hidden mb-10">
-
-        <!-- Summary bar -->
-        <div id="results-summary" class="flex flex-wrap items-center gap-3 mb-5 text-sm text-slate-500">
-            <!-- Injected by JS -->
-        </div>
-
-        <!-- Passed -->
-        <div class="mb-4">
-            <button onclick="toggleSection('passed')"
-                    class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
-                <span class="flex items-center gap-2 font-bold text-slate-900">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                    Passed — Score ≥ 75 &amp; 7+ Bullish Managers
-                    <span id="passed-count" class="text-sm font-normal text-slate-400"></span>
-                </span>
-                <svg id="passed-chevron" class="h-4 w-4 text-slate-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
-            <div id="passed-body" class="mt-2">
-                <div id="passed-empty" class="hidden stitch-card p-8 text-center text-slate-400 text-sm">
-                    None of today's 10 cleared the bar. Check back tomorrow — the draw is different every day.
-                </div>
-                <div class="stitch-card overflow-hidden hidden" id="passed-table-wrap">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                <th class="px-4 py-3 text-left">Ticker</th>
-                                <th class="px-4 py-3 text-left">Company</th>
-                                <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
-                                <th class="px-4 py-3 text-center">Score</th>
-                                <th class="px-4 py-3 text-center">Signal</th>
-                                <th class="px-4 py-3 text-center">Managers</th>
-                            </tr>
-                        </thead>
-                        <tbody id="passed-tbody" class="divide-y divide-slate-50"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Did Not Pass -->
-        <div class="mb-4">
-            <button onclick="toggleSection('failed')"
-                    class="w-full flex items-center justify-between px-4 py-3 stitch-card hover:bg-slate-50 transition-colors">
-                <span class="flex items-center gap-2 font-bold text-slate-900">
-                    <span class="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span>
-                    Did Not Pass
-                    <span id="failed-count" class="text-sm font-normal text-slate-400"></span>
-                </span>
-                <svg id="failed-chevron" class="h-4 w-4 text-slate-400 transition-transform rotate-[-90deg]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
-            <div id="failed-body" class="mt-2 hidden">
-                <div class="stitch-card overflow-hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                <th class="px-4 py-3 text-left">Ticker</th>
-                                <th class="px-4 py-3 text-left">Company</th>
-                                <th class="px-4 py-3 text-left hidden sm:table-cell">Sector</th>
-                                <th class="px-4 py-3 text-center">Score</th>
-                                <th class="px-4 py-3 text-center">Signal</th>
-                                <th class="px-4 py-3 text-center">Managers</th>
-                            </tr>
-                        </thead>
-                        <tbody id="failed-tbody" class="divide-y divide-slate-50"></tbody>
-                    </table>
+                <div style="height:6px;background:#F3F4F6;border-radius:6px;overflow:hidden;">
+                    <div id="progress-bar" style="height:100%;background:var(--text);border-radius:6px;width:0%;transition:width .4s ease;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Past 20 daily scans -->
-    <div class="mt-8">
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Scan Archive — Last 20 Days</h2>
-            <span id="history-status" class="text-xs text-slate-400"></span>
+    <!-- Investor legend (always shown after scan) -->
+    <div id="inv-legend" style="display:none;background:var(--surface);border-radius:12px;border:1px solid var(--border);padding:12px 16px;margin-bottom:16px;overflow-x:auto;">
+        <div style="display:flex;gap:14px;min-width:max-content;">
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Buffett</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#14B8A6;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Lynch</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#3B82F6;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Graham</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#64748B;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Marks</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#6366F1;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Dalio</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#EF4444;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Burry</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#EC4899;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Fisher</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#8B5CF6;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Wood</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#F97316;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Greenblatt</span></div>
+            <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#10B981;flex-shrink:0;"></div><span style="font-size:12px;color:var(--text2);">Druckenmiller</span></div>
         </div>
-        <div id="history-strip" class="flex gap-2 overflow-x-auto pb-2">
-            <div id="history-loading" class="flex gap-2 w-full">
-                <div class="stitch-card w-28 h-20 flex-shrink-0 animate-pulse bg-slate-50"></div>
-                <div class="stitch-card w-28 h-20 flex-shrink-0 animate-pulse bg-slate-50"></div>
-                <div class="stitch-card w-28 h-20 flex-shrink-0 animate-pulse bg-slate-50"></div>
-            </div>
+    </div>
+
+    <!-- Results cards -->
+    <div id="results-section" style="display:none;">
+        <div id="results-summary" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;"></div>
+        <div id="results-cards" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+
+    <!-- History strip -->
+    <div style="margin-top:32px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);">Scan Archive</div>
+            <span id="history-status" style="font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div id="history-strip" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">
+            <div style="flex-shrink:0;width:100px;height:72px;background:var(--surface);border:1px solid var(--border);border-radius:12px;animation:chipPulse 1.4s infinite;"></div>
+            <div style="flex-shrink:0;width:100px;height:72px;background:var(--surface);border:1px solid var(--border);border-radius:12px;animation:chipPulse 1.4s infinite;"></div>
+            <div style="flex-shrink:0;width:100px;height:72px;background:var(--surface);border:1px solid var(--border);border-radius:12px;animation:chipPulse 1.4s infinite;"></div>
         </div>
     </div>
 
 </main>
 
-<footer class="w-full py-6 mt-auto text-center text-slate-400 text-xs border-t border-slate-200 bg-white">
+<footer style="padding:20px;text-align:center;font-size:12px;color:var(--text3);border-top:1px solid var(--border);background:var(--surface);">
     {{ daily_scan_size }} stocks drawn daily from a universe of {{ total_stocks }}. Not financial advice.
 </footer>
 
 <script>
-    const DAILY_SCAN_SIZE = {{ daily_scan_size }};
-    const CACHE_KEY       = 'il_daily_scan_v3';
+const DAILY_SCAN_SIZE = {{ daily_scan_size }};
+const CACHE_KEY = 'il_daily_scan_v3';
 
-    let todayTickers  = [];
-    let isScanning    = false;
-    let activeHistId  = null;
+const INVESTORS = [
+    { name:'Buffett',       color:'#F59E0B' },
+    { name:'Lynch',         color:'#14B8A6' },
+    { name:'Graham',        color:'#3B82F6' },
+    { name:'Marks',         color:'#64748B' },
+    { name:'Dalio',         color:'#6366F1' },
+    { name:'Burry',         color:'#EF4444' },
+    { name:'Fisher',        color:'#EC4899' },
+    { name:'Wood',          color:'#8B5CF6' },
+    { name:'Greenblatt',    color:'#F97316' },
+    { name:'Druckenmiller', color:'#10B981' },
+];
 
-    // ── Boot ───────────────────────────────────────────────────────────────
-    window.addEventListener('DOMContentLoaded', async () => {
-        // Set today's date label
-        const now = new Date();
-        document.getElementById('today-date-label').textContent =
-            now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+let todayTickers = [];
+let scanResults  = [];
+let currentSort  = 'score';
+let isScanning   = false;
+let activeHistId = null;
 
-        // Load history (non-blocking)
-        loadHistory();
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const scoreColor = s => s >= 75 ? '#00C805' : s >= 50 ? '#F59E0B' : '#FF3B30';
+const scoreBg    = s => s >= 75 ? '#E8FDE9'  : s >= 50 ? '#FEF3C7'  : '#FFF0EF';
+function signalStyle(label) {
+    if (label === 'Strong Buy') return { color:'#059669', bg:'#D1FAE5' };
+    if (label === 'Buy')        return { color:'#16A34A', bg:'#DCFCE7' };
+    if (label === 'Hold')       return { color:'#D97706', bg:'#FEF3C7' };
+    if (label === 'Sell')       return { color:'#DC2626', bg:'#FEE2E2' };
+    return { color:'#7F1D1D', bg:'#FEE2E2' };
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-        // Fetch today's tickers
-        try {
-            const resp   = await fetch('/api/scan/daily-tickers');
-            const data   = await resp.json();
-            todayTickers = data.tickers || [];
-            renderTickerGrid(todayTickers, {});
+// ── Boot ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+    // Date label
+    const now = new Date();
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('date-label').textContent =
+        days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate() + ' · Daily Scan';
 
-            // Check local cache for today's results
-            const cached = loadCache(data.date);
-            if (cached) {
-                renderTickerGrid(todayTickers, cached.byTicker);
-                renderResults(cached.results, cached.scannedAt, true);
-            } else {
-                document.getElementById('scan-action').classList.remove('hidden');
-            }
-        } catch {
-            document.getElementById('ticker-grid').innerHTML =
-                '<p class="col-span-5 text-sm text-slate-400 text-center py-4">Could not load today\'s picks — please refresh.</p>';
+    loadHistory();
+
+    try {
+        const resp = await fetch('/api/scan/daily-tickers');
+        const data = await resp.json();
+        todayTickers = data.tickers || [];
+        renderTickerGrid(todayTickers, {});
+
+        const cached = loadCache(data.date);
+        if (cached) {
+            renderTickerGrid(todayTickers, cached.byTicker);
+            scanResults = cached.results;
+            renderResults(cached.results, cached.scannedAt, true);
+        } else {
+            document.getElementById('scan-action').style.display = 'block';
         }
-    });
-
-    // ── Ticker grid ────────────────────────────────────────────────────────
-    function renderTickerGrid(tickers, byTicker) {
-        document.getElementById('ticker-grid').innerHTML = tickers.map(t => {
-            const r = byTicker[t];
-            let cls = 'ticker-chip';
-            let right = '';
-            if (r) {
-                const passed = r.consensus >= 75 && r.bullish_count >= 7;
-                cls += passed ? ' done-pass' : ' done-fail';
-                const barColor = r.consensus >= 75 ? 'bg-emerald-500' : r.consensus >= 50 ? 'bg-yellow-400' : 'bg-red-400';
-                right = `<span class="font-bold text-slate-700 text-sm">${r.consensus}</span>`;
-            }
-            return `<div class="${cls}" id="chip-${t}">
-                <span class="font-bold text-slate-800 text-sm">${t}</span>
-                ${right}
-            </div>`;
-        }).join('');
+    } catch(e) {
+        document.getElementById('ticker-grid').innerHTML =
+            '<p style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:13px;padding:16px 0;">Could not load today\'s picks — please refresh.</p>';
     }
+});
 
-    function setChipScanning(ticker) {
-        const el = document.getElementById(`chip-${ticker}`);
-        if (el) el.className = 'ticker-chip scanning';
-    }
-
-    function setChipDone(ticker, consensus, passed) {
-        const el = document.getElementById(`chip-${ticker}`);
-        if (!el) return;
-        el.className = 'ticker-chip ' + (passed ? 'done-pass' : 'done-fail');
-        el.innerHTML = `<span class="font-bold text-slate-800 text-sm">${ticker}</span>
-                        <span class="font-bold text-slate-700 text-sm">${consensus}</span>`;
-    }
-
-    // ── Scan ───────────────────────────────────────────────────────────────
-    async function startScan() {
-        if (isScanning || !todayTickers.length) return;
-        isScanning = true;
-
-        document.getElementById('scan-action').classList.add('hidden');
-        document.getElementById('scan-progress').classList.remove('hidden');
-
-        // Animate chips to scanning state
-        todayTickers.forEach(setChipScanning);
-        setProgress(0, 'Contacting market data…');
-
-        let results = [];
-        try {
-            // Fire all 10 in one call
-            const resp = await fetch('/api/scan/custom', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tickers: todayTickers }),
-            });
-
-            setProgress(60, 'Scoring…');
-            const data = await resp.json();
-            results = data.results || [];
-
-            // Animate chips done one by one
-            const byTicker = Object.fromEntries(results.map(r => [r.ticker, r]));
-            let done = 0;
-            for (const t of todayTickers) {
-                const r = byTicker[t];
-                if (r) setChipDone(t, r.consensus, r.consensus >= 75 && r.bullish_count >= 7);
-                done++;
-                setProgress(60 + Math.round((done / todayTickers.length) * 40), 'Scoring…');
-                await sleep(80);
-            }
-        } catch (e) {
-            console.error('Scan failed:', e);
-            document.getElementById('scan-action').classList.remove('hidden');
-            document.getElementById('scan-progress').classList.add('hidden');
-            isScanning = false;
-            return;
+// ── Ticker grid ───────────────────────────────────────────────────────────────
+function renderTickerGrid(tickers, byTicker) {
+    document.getElementById('ticker-grid').innerHTML = tickers.map(t => {
+        const r = byTicker[t];
+        let cls = 'ticker-chip';
+        let score = '';
+        if (r) {
+            const passed = r.consensus >= 75 && r.bullish_count >= 7;
+            cls += passed ? ' done-pass' : ' done-fail';
+            score = `<span style="font-weight:700;font-size:13px;color:${scoreColor(r.consensus)};">${r.consensus}</span>`;
         }
+        return `<div class="${cls}" id="chip-${t}">
+            <span style="font-weight:700;font-size:13px;">${t}</span>${score}
+        </div>`;
+    }).join('');
+}
+function setChipScanning(t) {
+    const el = document.getElementById('chip-' + t);
+    if (el) el.className = 'ticker-chip scanning';
+}
+function setChipDone(t, consensus, passed) {
+    const el = document.getElementById('chip-' + t);
+    if (!el) return;
+    el.className = 'ticker-chip ' + (passed ? 'done-pass' : 'done-fail');
+    el.innerHTML = `<span style="font-weight:700;font-size:13px;">${t}</span><span style="font-weight:700;font-size:13px;color:${scoreColor(consensus)};">${consensus}</span>`;
+}
 
-        setProgress(100, 'Complete!');
-        await sleep(400);
-        document.getElementById('scan-progress').classList.add('hidden');
+// ── Scan ──────────────────────────────────────────────────────────────────────
+async function startScan() {
+    if (isScanning || !todayTickers.length) return;
+    isScanning = true;
+    document.getElementById('scan-action').style.display = 'none';
+    document.getElementById('scan-progress').style.display = 'block';
+    todayTickers.forEach(setChipScanning);
+    setProgress(0, 'Contacting market data…');
 
-        const scannedAt = Date.now();
-
-        // Cache locally keyed to today's date string
-        const dateStr = new Date().toISOString().slice(0, 10);
-        saveCache(dateStr, results);
-
-        // Auto-save to server
-        fetch('/api/scan/save', {
+    let results = [];
+    try {
+        const resp = await fetch('/api/scan/custom', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ results }),
-        }).then(() => loadHistory()).catch(() => {});
+            body: JSON.stringify({ tickers: todayTickers }),
+        });
+        setProgress(60, 'Scoring…');
+        const data = await resp.json();
+        results = data.results || [];
 
-        renderResults(results, scannedAt, false);
+        const byTicker = Object.fromEntries(results.map(r => [r.ticker, r]));
+        let done = 0;
+        for (const t of todayTickers) {
+            const r = byTicker[t];
+            if (r) setChipDone(t, r.consensus, r.consensus >= 75 && r.bullish_count >= 7);
+            done++;
+            setProgress(60 + Math.round(done / todayTickers.length * 40), 'Scoring…');
+            await sleep(80);
+        }
+    } catch(e) {
+        document.getElementById('scan-action').style.display = 'block';
+        document.getElementById('scan-progress').style.display = 'none';
         isScanning = false;
+        return;
     }
 
-    function setProgress(pct, label) {
-        document.getElementById('progress-bar').style.width = pct + '%';
-        document.getElementById('progress-pct').textContent  = pct + '%';
-        document.getElementById('progress-label').textContent = label;
+    setProgress(100, 'Complete!');
+    await sleep(400);
+    document.getElementById('scan-progress').style.display = 'none';
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    saveCache(dateStr, results);
+
+    fetch('/api/scan/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ results }),
+    }).then(() => loadHistory()).catch(() => {});
+
+    scanResults = results;
+    renderResults(results, Date.now(), false);
+    isScanning = false;
+}
+
+function setProgress(pct, label) {
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+    document.getElementById('progress-label').textContent = label;
+}
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
+function setSort(s) {
+    currentSort = s;
+    ['score','price'].forEach(v => {
+        const btn = document.getElementById('sort-' + v);
+        if (v === s) { btn.style.background = 'var(--text)'; btn.style.color = '#fff'; }
+        else         { btn.style.background = 'var(--surface)'; btn.style.color = 'var(--text2)'; }
+    });
+    if (scanResults.length) renderResultCards(sortResults(scanResults));
+}
+function sortResults(results) {
+    return [...results].sort((a, b) => {
+        if (currentSort === 'price') return (b.price || 0) - (a.price || 0);
+        return b.consensus - a.consensus;
+    });
+}
+
+// ── Render results ────────────────────────────────────────────────────────────
+function renderResults(results, scannedAt, fromCache) {
+    const passed = results.filter(r => r.consensus >= 75 && r.bullish_count >= 7).length;
+    const age = Math.round((Date.now() - scannedAt) / 60000);
+    const when = age < 2 ? 'just now' : age < 60 ? age + 'm ago' : Math.round(age/60) + 'h ago';
+
+    // Summary
+    document.getElementById('results-summary').innerHTML = `
+        <span style="font-size:12px;font-weight:700;color:#059669;background:#D1FAE5;padding:4px 10px;border-radius:20px;">${passed} passed</span>
+        <span style="font-size:12px;color:var(--text3);background:var(--surface);border:1px solid var(--border);padding:4px 10px;border-radius:20px;">${results.length - passed} did not pass</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:auto;">Scored ${when}${fromCache ? ' · cached' : ''}</span>`;
+
+    document.getElementById('sort-bar').style.display = 'flex';
+    document.getElementById('inv-legend').style.display = 'block';
+    document.getElementById('results-section').style.display = 'block';
+
+    renderResultCards(sortResults(results));
+}
+
+function renderResultCards(results) {
+    const container = document.getElementById('results-cards');
+    container.innerHTML = results.map((r, i) => stockCard(r, i + 1)).join('');
+}
+
+function stockCard(r, rank) {
+    const comp = r.consensus;
+    const sig  = signalStyle(r.signal_label);
+    const priceHtml = r.price != null
+        ? `<div style="font-weight:700;font-size:15px;">$${r.price.toFixed(2)}</div>`
+        : '<div style="font-size:13px;color:var(--text3);">—</div>';
+
+    const scores = r.scores || {};
+    const barsHtml = INVESTORS.map(inv => {
+        const s = scores[inv.name] || 0;
+        const h = Math.round(s / 100 * 24) + 4;
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;">
+            <div style="width:100%;border-radius:3px;overflow:hidden;height:${h}px;background:#F3F4F6;">
+                <div style="width:100%;height:100%;border-radius:3px;background:${inv.color};opacity:${s >= 50 ? 1 : 0.4};"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    return `<a href="/analyze/${r.ticker}" class="card-enter"
+        style="display:block;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;text-decoration:none;color:inherit;transition:all .15s;animation-delay:${(rank-1)*0.04}s;"
+        onmouseover="this.style.boxShadow='var(--shadow)';this.style.borderColor='#D1D5DB';"
+        onmouseout="this.style.boxShadow='none';this.style.borderColor='var(--border)';">
+
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <span style="font-size:13px;color:var(--text3);font-weight:600;width:22px;text-align:center;flex-shrink:0;">#${rank}</span>
+            <div style="width:40px;height:40px;border-radius:10px;background:#F3F4F6;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <span style="font-weight:700;font-size:12px;color:var(--text2);">${r.ticker.slice(0,2)}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;font-size:15px;letter-spacing:-0.2px;">${r.ticker}</div>
+                <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name || r.ticker}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">${priceHtml}</div>
+            <div style="width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:${scoreBg(comp)};border:2px solid ${scoreColor(comp)}30;">
+                <span style="font-weight:800;font-size:18px;color:${scoreColor(comp)};line-height:1;">${comp}</span>
+                <span style="font-size:9px;color:var(--text3);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">score</span>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:3px;align-items:flex-end;height:28px;margin-bottom:10px;">${barsHtml}</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${sig.color};background:${sig.bg};padding:3px 8px;border-radius:6px;">${r.signal_label}</span>
+            <span style="font-size:12px;color:var(--text3);">${r.sector || ''}</span>
+        </div>
+    </a>`;
+}
+
+// ── Cache ─────────────────────────────────────────────────────────────────────
+function loadCache(dateStr) {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        return d.date === dateStr ? d : null;
+    } catch(e) { return null; }
+}
+function saveCache(dateStr, results) {
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            date: dateStr, results,
+            byTicker: Object.fromEntries(results.map(r => [r.ticker, r])),
+            scannedAt: Date.now(),
+        }));
+    } catch(e) {}
+}
+
+// ── History strip ─────────────────────────────────────────────────────────────
+async function loadHistory() {
+    try {
+        const resp = await fetch('/api/scan/history');
+        const data = await resp.json();
+        const history = data.history || [];
+        document.getElementById('history-status').textContent = history.length ? history.length + ' saved' : '';
+        renderHistory(history);
+    } catch(e) {
+        document.getElementById('history-strip').innerHTML =
+            '<span style="font-size:12px;color:var(--text3);">History unavailable</span>';
     }
-
-    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-    // ── Render results ─────────────────────────────────────────────────────
-    function renderResults(results, scannedAt, fromCache) {
-        results.sort((a, b) => b.consensus - a.consensus);
-        const passed = results.filter(r => r.consensus >= 75 && r.bullish_count >= 7);
-        const failed = results.filter(r => !(r.consensus >= 75 && r.bullish_count >= 7));
-
-        const age  = Math.round((Date.now() - scannedAt) / 60000);
-        const when = age < 2 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age/60)}h ago`;
-
-        document.getElementById('results-summary').innerHTML = `
-            <span class="stitch-card px-3 py-1 text-xs font-semibold text-emerald-700 border-emerald-200 bg-emerald-50">
-                ${passed.length} passed
-            </span>
-            <span class="stitch-card px-3 py-1 text-xs text-slate-500">
-                ${failed.length} did not pass
-            </span>
-            <span class="text-xs text-slate-400 ml-auto">Scored ${when}${fromCache ? ' · cached' : ''}</span>`;
-
-        // Passed
-        document.getElementById('passed-count').textContent = `(${passed.length})`;
-        if (passed.length === 0) {
-            document.getElementById('passed-empty').classList.remove('hidden');
-            document.getElementById('passed-table-wrap').classList.add('hidden');
-        } else {
-            document.getElementById('passed-empty').classList.add('hidden');
-            document.getElementById('passed-table-wrap').classList.remove('hidden');
-            document.getElementById('passed-tbody').innerHTML = passed.map(rowHtml).join('');
-        }
-
-        // Failed
-        document.getElementById('failed-count').textContent = `(${failed.length})`;
-        document.getElementById('failed-tbody').innerHTML = failed.map(rowHtml).join('');
-
-        document.getElementById('results-section').classList.remove('hidden');
+}
+function renderHistory(history) {
+    const strip = document.getElementById('history-strip');
+    if (!history.length) {
+        strip.innerHTML = '<span style="font-size:12px;color:var(--text3);">No scans saved yet — run your first scan above.</span>';
+        return;
     }
-
-    function rowHtml(r) {
-        const sigBg    = signalColour(r.signal_label);
-        const barColor = r.consensus >= 75 ? 'bg-emerald-500' : r.consensus >= 50 ? 'bg-yellow-400' : 'bg-red-400';
-        return `<tr class="result-row" onclick="window.location='/analyze/${r.ticker}'">
-            <td class="px-4 py-3 font-bold text-slate-900">${r.ticker}</td>
-            <td class="px-4 py-3 text-slate-600 max-w-[160px] truncate">${r.name || r.ticker}</td>
-            <td class="px-4 py-3 text-slate-400 text-xs hidden sm:table-cell">${r.sector || '—'}</td>
-            <td class="px-4 py-3">
-                <div class="flex items-center gap-2 justify-center">
-                    <div class="w-16 bg-slate-100 rounded-full h-1.5 hidden sm:block">
-                        <div class="h-1.5 rounded-full ${barColor}" style="width:${r.consensus}%"></div>
-                    </div>
-                    <span class="font-bold text-slate-800 w-8 text-center">${r.consensus}</span>
-                </div>
-            </td>
-            <td class="px-4 py-3 text-center">
-                <span class="px-2 py-0.5 rounded-full text-xs font-semibold text-white ${sigBg}">${r.signal_label}</span>
-            </td>
-            <td class="px-4 py-3 text-center">
-                <span class="font-semibold ${r.bullish_count >= 7 ? 'text-emerald-600' : 'text-slate-500'}">${r.bullish_count}/10</span>
-                <span class="text-slate-300 text-xs ml-0.5">bullish</span>
-            </td>
-        </tr>`;
-    }
-
-    function signalColour(l) {
-        return l === 'Strong Buy' ? 'bg-emerald-600' : l === 'Buy' ? 'bg-green-500'
-             : l === 'Hold'       ? 'bg-yellow-500' : l === 'Sell' ? 'bg-orange-500' : 'bg-red-500';
-    }
-
-    // ── Collapsible sections ───────────────────────────────────────────────
-    function toggleSection(id) {
-        const body    = document.getElementById(id + '-body');
-        const chevron = document.getElementById(id + '-chevron');
-        const hidden  = body.classList.toggle('hidden');
-        chevron.style.transform = hidden ? 'rotate(-90deg)' : 'rotate(0deg)';
-    }
-
-    // ── Local cache (keyed by date) ────────────────────────────────────────
-    function loadCache(dateStr) {
-        try {
-            const raw = localStorage.getItem(CACHE_KEY);
-            if (!raw) return null;
-            const data = JSON.parse(raw);
-            if (data.date !== dateStr) return null;
-            return data;
-        } catch { return null; }
-    }
-
-    function saveCache(dateStr, results) {
-        try {
-            const byTicker = Object.fromEntries(results.map(r => [r.ticker, r]));
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                date: dateStr, results, byTicker, scannedAt: Date.now(),
-            }));
-        } catch {}
-    }
-
-    // ── History strip ──────────────────────────────────────────────────────
-    async function loadHistory() {
-        try {
-            const resp    = await fetch('/api/scan/history');
-            const data    = await resp.json();
-            const history = data.history || [];
-            document.getElementById('history-status').textContent =
-                history.length ? `${history.length} saved` : '';
-            renderHistory(history);
-        } catch {
-            document.getElementById('history-loading').innerHTML =
-                '<span class="text-xs text-slate-400 italic py-4">History unavailable</span>';
-        }
-    }
-
-    function renderHistory(history) {
-        const strip = document.getElementById('history-strip');
-        if (!history.length) {
-            strip.innerHTML = '<span class="text-xs text-slate-400 italic py-4">No scans saved yet — run your first scan above.</span>';
-            return;
-        }
-        strip.innerHTML = history.map(item => {
-            const d       = new Date(item.scanned_at);
-            const today   = new Date();
-            const isToday = d.toDateString() === today.toDateString();
-            const label   = isToday ? 'Today' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-            const time    = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            const passed  = item.passed_count || 0;
-            const scanned = item.total_scanned || 0;
-            return `<div id="hist-${item.id}"
-                        onclick="loadHistoryScan(${item.id})"
-                        class="history-card stitch-card flex-shrink-0 w-28 px-3 py-2.5 cursor-pointer">
-                <div class="text-xs font-bold text-slate-700">${label}</div>
-                <div class="text-[10px] text-slate-400 mb-1.5">${time}</div>
-                <div class="text-xs font-semibold ${passed > 0 ? 'text-emerald-600' : 'text-slate-400'}">${passed} passed</div>
-                <div class="text-[10px] text-slate-400">${scanned} scored</div>
-            </div>`;
-        }).join('');
-    }
-
-    async function loadHistoryScan(id) {
-        if (activeHistId) document.getElementById(`hist-${activeHistId}`)?.classList.remove('active');
-        activeHistId = id;
-        document.getElementById(`hist-${id}`)?.classList.add('active');
-        try {
-            const resp = await fetch(`/api/scan/history/${id}`);
-            if (!resp.ok) throw new Error();
-            const data = await resp.json();
-            const results = data.results || [];
-            const tickers = results.map(r => r.ticker);
-            renderTickerGrid(tickers, Object.fromEntries(results.map(r => [r.ticker, r])));
-            renderResults(results, new Date(data.scanned_at).getTime(), true);
-            document.getElementById('scan-action').classList.add('hidden');
-        } catch { alert('Could not load that scan.'); }
-    }
+    strip.innerHTML = history.map(item => {
+        const d = new Date(item.scanned_at);
+        const today = new Date();
+        const isToday = d.toDateString() === today.toDateString();
+        const label = isToday ? 'Today' : d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+        const time  = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+        const passed = item.passed_count || 0;
+        return `<div id="hist-${item.id}" onclick="loadHistoryScan(${item.id})"
+            class="history-card"
+            style="flex-shrink:0;width:100px;padding:12px;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--text);">${label}</div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">${time}</div>
+            <div style="font-size:12px;font-weight:600;color:${passed > 0 ? '#059669' : 'var(--text3)'};">${passed} passed</div>
+            <div style="font-size:11px;color:var(--text3);">${item.total_scanned || 0} scored</div>
+        </div>`;
+    }).join('');
+}
+async function loadHistoryScan(id) {
+    if (activeHistId) document.getElementById('hist-' + activeHistId)?.classList.remove('active');
+    activeHistId = id;
+    document.getElementById('hist-' + id)?.classList.add('active');
+    try {
+        const resp = await fetch('/api/scan/history/' + id);
+        if (!resp.ok) throw new Error();
+        const data = await resp.json();
+        const results = data.results || [];
+        const tickers = results.map(r => r.ticker);
+        renderTickerGrid(tickers, Object.fromEntries(results.map(r => [r.ticker, r])));
+        scanResults = results;
+        renderResults(results, new Date(data.scanned_at).getTime(), true);
+        document.getElementById('scan-action').style.display = 'none';
+    } catch(e) { alert('Could not load that scan.'); }
+}
 </script>
+
 </body>
 </html>
