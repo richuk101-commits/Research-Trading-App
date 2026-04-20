@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Investor Lens — Stock Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,6 +21,14 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        /* Touch-friendly interactive states */
+        .nav-link:hover, .nav-link:active { background: var(--text) !important; color: #fff !important; }
+        .quick-chip:hover, .quick-chip:active { background: var(--text) !important; color: #fff !important; border-color: var(--text) !important; }
+        #gem-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        #gem-card:active { transform: translateY(0); box-shadow: none; }
+        .news-item:hover, .news-item:active { background: #F8F9FB !important; }
+        .ac-item:hover, .ac-item:active { background: #F8F9FB !important; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
     </style>
 </head>
 <body>
@@ -31,10 +41,8 @@
         </span>
         <span style="font-weight:700;font-size:16px;letter-spacing:-0.4px;">Investor Lens</span>
     </a>
-    <a href="/scanner" id="nav-btn"
-       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;"
-       onmouseover="this.style.background='var(--text)';this.style.color='#fff';"
-       onmouseout="this.style.background='transparent';this.style.color='var(--text2)';">
+    <a href="/scanner" class="nav-link"
+       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;">
         Top Picks
     </a>
 </nav>
@@ -85,9 +93,7 @@
     <!-- Daily Gem Hunt card -->
     <div style="padding:0 20px 24px;max-width:680px;margin:0 auto;">
         <a href="/scanner" id="gem-card"
-           style="display:block;width:100%;padding:24px;border-radius:16px;text-align:left;background:var(--text);color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;text-decoration:none;"
-           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-lg)';"
-           onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+           style="display:block;width:100%;padding:24px;border-radius:16px;text-align:left;background:var(--text);color:#fff;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;text-decoration:none;">
             <!-- Background blobs -->
             <div style="position:absolute;right:-20px;top:-20px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
             <div style="position:absolute;right:40px;bottom:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.03);pointer-events:none;"></div>
@@ -176,9 +182,8 @@
 ['AAPL','NVDA','MSFT','TSLA','V'].forEach(t => {
     const btn = document.createElement('button');
     btn.textContent = t;
-    btn.style.cssText = 'padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text);transition:all .1s;font-family:"DM Sans",sans-serif;';
-    btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--text)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--text)'; });
-    btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--surface)'; btn.style.color = 'var(--text)'; btn.style.borderColor = 'var(--border)'; });
+    btn.className = 'quick-chip';
+    btn.style.cssText = 'padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text);transition:all .1s;font-family:"DM Sans",sans-serif;min-height:36px;';
     btn.addEventListener('click', () => {
         document.getElementById('ticker-input').value = t;
         document.getElementById('search-form').submit();
@@ -217,9 +222,8 @@ input.addEventListener('input', function() {
                 data.results.forEach((item, i) => {
                     const li = document.createElement('li');
                     li.style.cssText = 'padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;border-bottom:' + (i < data.results.length-1 ? '1px solid var(--border)' : 'none') + ';transition:background .1s;background:transparent;';
+                    li.className = 'ac-item';
                     li.innerHTML = `<div><div style="font-weight:700;font-size:15px;">${item.symbol}</div><div style="font-size:13px;color:var(--text2);">${item.name}</div></div><span style="font-size:11px;color:var(--text3);background:#F3F4F6;padding:3px 8px;border-radius:6px;text-transform:uppercase;">${item.exchange}</span>`;
-                    li.addEventListener('mouseenter', () => li.style.background = '#F8F9FB');
-                    li.addEventListener('mouseleave', () => li.style.background = 'transparent');
                     li.addEventListener('mousedown', () => {
                         input.value = item.symbol;
                         dropdown.style.display = 'none';
@@ -290,9 +294,8 @@ function renderNews(items, ageSecs) {
         return;
     }
     feed.innerHTML = items.map((item, i) => `
-        <a href="${item.link}" target="_blank" rel="noopener noreferrer"
-           style="display:flex;align-items:flex-start;gap:12px;padding:16px 20px;background:var(--surface);border-bottom:${i < items.length-1 ? '1px solid var(--border)' : 'none'};text-decoration:none;transition:background .1s;"
-           onmouseover="this.style.background='#F8F9FB';" onmouseout="this.style.background='var(--surface)';">
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="news-item"
+           style="display:flex;align-items:flex-start;gap:12px;padding:16px 20px;background:var(--surface);border-bottom:${i < items.length-1 ? '1px solid var(--border)' : 'none'};text-decoration:none;transition:background .1s;">
             <div style="flex:1;">
                 <div style="font-size:14px;font-weight:500;line-height:1.4;color:var(--text);">${item.title}</div>
                 <div style="font-size:12px;color:var(--text3);margin-top:4px;">${item.source} · ${item.age}</div>

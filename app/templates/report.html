@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ result.ticker if result and result.ticker else 'Analysis' }} — Investor Lens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -21,6 +22,14 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         .score-fill { transition: width .9s cubic-bezier(.22,1,.36,1); }
+        /* Touch-friendly interactive states */
+        .nav-link:hover, .nav-link:active { background: var(--text) !important; color: #fff !important; }
+        /* Responsive grids */
+        @media (max-width: 480px) {
+            .inv-grid { grid-template-columns: 1fr !important; }
+            .fund-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .chart-wrap { height: clamp(140px, 45vw, 180px) !important; }
+        }
     </style>
 </head>
 <body>
@@ -46,10 +55,8 @@
         </span>
         <span style="font-weight:700;font-size:16px;letter-spacing:-0.4px;">Investor Lens</span>
     </a>
-    <a href="/scanner"
-       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;"
-       onmouseover="this.style.background='var(--text)';this.style.color='#fff';"
-       onmouseout="this.style.background='transparent';this.style.color='var(--text2)';">
+    <a href="/scanner" class="nav-link"
+       style="padding:6px 14px;border-radius:20px;font-size:13.5px;font-weight:500;color:var(--text2);transition:all .15s;">
         Top Picks
     </a>
 </nav>
@@ -156,14 +163,14 @@
                 <button onclick="updateChart(365)" id="btn-1y" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1);color:var(--text);transition:all .15s;">1Y</button>
             </div>
         </div>
-        <div style="position:relative;height:200px;">
+        <div class="chart-wrap" style="position:relative;height:200px;">
             <canvas id="priceChart"></canvas>
         </div>
     </div>
 
     <!-- ── Framework breakdown ── -->
     <div style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">Framework Breakdown</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-bottom:24px;">
+    <div class="inv-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:24px;">
         {% for mgr in result.managers %}
         {% set meta = MANAGER_META.get(mgr.name, {"color":"#6B7280","bg":"#F1F5F9","full":mgr.name,"initial":mgr.name[:2].upper()}) %}
         <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;">
@@ -206,7 +213,7 @@
     <!-- ── Key Fundamentals ── -->
     {% if result.raw_metrics %}
     <div style="font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">Key Fundamentals</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:24px;">
+    <div class="fund-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:24px;">
         {% for key, val in result.raw_metrics.items() %}
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:4px;">{{ key }}</div>
@@ -231,6 +238,7 @@
 </footer>
 
 {% if not result.error %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let myChart = null;
 let chartData = { dates: [], prices: [] };
